@@ -39,7 +39,7 @@ export default function ResetPasswordScreen() {
           },
         ]}
       >
-        <Pressable onPress={handleGoBack} style={styles.backButton}>
+        <Pressable testID="back-button" accessibilityRole="button" onPress={handleGoBack} style={styles.backButton}>
           <Feather name="arrow-left" size={24} color={Colors.light.text} />
         </Pressable>
 
