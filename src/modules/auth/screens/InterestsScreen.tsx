@@ -45,7 +45,6 @@ const interests: Interest[] = [
 const initialSelected: string[] = [];
 
 export default function InterestsScreen({ navigation }: any) {
-  // useTheme removed (not used) to avoid lint warning
   const insets = useSafeAreaInsets();
 
   const [selectedInterests, setSelectedInterests] =
