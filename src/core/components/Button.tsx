@@ -7,8 +7,8 @@ import Animated, {
   WithSpringConfig,
 } from "react-native-reanimated";
 
-import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
+import { ThemedText } from "@/src/core/components/ThemedText";
+import { useTheme } from "@/src/core/hooks/useTheme";
 import { BorderRadius, Spacing } from "@/src/core/constants/theme";
 
 interface ButtonProps {

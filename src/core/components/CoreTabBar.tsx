@@ -3,7 +3,7 @@ import { View, StyleSheet, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/src/core/components/ThemedText";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { Spacing, Typography } from "@/src/core/constants/theme";
 
@@ -23,7 +23,7 @@ const TAB_CONFIG: TabConfig[] = [
 ];
 
 export function CoreTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
   const renderTab = (route: any, index: number) => {

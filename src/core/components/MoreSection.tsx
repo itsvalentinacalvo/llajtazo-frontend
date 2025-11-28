@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/src/core/components/ThemedText";
 import { Spacing, Typography } from "@/src/core/constants/theme";
 import { useTheme } from "@/src/core/hooks/useTheme";
 

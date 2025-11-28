@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, Image } from "react-native";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { Feather } from "@expo/vector-icons";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme } from "@/src/core/hooks/useTheme";
 import { Typography, Spacing } from "@/src/core/constants/theme";
 
 interface MenuItem {

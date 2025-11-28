@@ -1,9 +1,9 @@
 import React from "react";
 import { View, StyleSheet, Pressable, Image, ImageSourcePropType } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { ThemedText } from "@/components/ThemedText";
-import { BorderRadius, Spacing, Typography, Shadows } from "@/src/core/constants/theme";
-import { useTheme } from "@/hooks/useTheme";
+import { ThemedText } from "@/src/core/components/ThemedText";
+import { BorderRadius, Spacing, Shadows } from "@/src/core/constants/theme";
+import { useTheme } from "@/src/core/hooks/useTheme";
 
 interface EventCardProps {
   title: string;
