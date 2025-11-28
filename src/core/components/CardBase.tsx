@@ -7,7 +7,7 @@ import Animated, {
   WithSpringConfig,
 } from "react-native-reanimated";
 
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/src/core/components/ThemedText";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/src/core/constants/theme";
 

@@ -1,8 +1,8 @@
 import React from "react";
 import { View, StyleSheet, Pressable, Image } from "react-native";
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/src/core/components/ThemedText";
 import { BorderRadius, Spacing } from "@/src/core/constants/theme";
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme } from "@/src/core/hooks/useTheme";
 
 interface InviteCardProps {
   onPress?: () => void;

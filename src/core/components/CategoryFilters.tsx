@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, ScrollView, Pressable, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/src/core/components/ThemedText";
 import { Spacing, Shadows } from "@/src/core/constants/theme";
 
 export interface Category {
