@@ -1,15 +1,6 @@
-import { NavigationContainer } from "@react-navigation/native";
 import { useState, useEffect } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
-
-// Placeholders (named) used while modules are not implemented
-function AuthStackPlaceholder() {
-  return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>AuthStackNavigator no disponible</Text>
-    </View>
-  );
-}
+import AuthStackNavigator from "@/src/modules/auth/navigation/AuthStackNavigator";
 
 function MainStackPlaceholder() {
   return (
@@ -20,17 +11,8 @@ function MainStackPlaceholder() {
 }
 
 // Estos imports serán reemplazados por los módulos reales cuando existan
-let AuthStackNavigator: any = AuthStackPlaceholder;
+// `AuthStackNavigator` se importa estáticamente porque ya está implementado
 let MainStackNavigator: any = MainStackPlaceholder;
-
-try {
-  // Module may not exist yet; prefer dynamic require but silence that rule locally
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const authMod = require("@/src/modules/auth/navigation/AuthStackNavigator");
-  AuthStackNavigator = authMod?.default ?? authMod;
-} catch {
-  // keep placeholder
-}
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -42,7 +24,7 @@ try {
 
 export default function RootNavigator() {
   // TODO: cambiar cuando implementen login real
-  const [isAuthenticated] = useState(false);
+  const isAuthenticated = false; // por ahora siempre falso
   const [isLoading, setIsLoading] = useState(true);
 
   // Simulación de splash/load al iniciar la app
@@ -62,9 +44,5 @@ export default function RootNavigator() {
     );
   }
 
-  return (
-    <NavigationContainer>
-      {isAuthenticated ? <MainStackNavigator /> : <AuthStackNavigator />}
-    </NavigationContainer>
-  );
+  return isAuthenticated ? <MainStackNavigator /> : <AuthStackNavigator />;
 }
