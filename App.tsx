@@ -4,8 +4,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import AuthStackNavigator from "@/src/modules/auth/navigation/AuthStackNavigator";
 import ErrorBoundary from "@/src/core/components/ErrorBoundary";
+import RootNavigator from "@/src/core/navigation/RootNavigator";
 
 export default function App() {
   return (
@@ -14,7 +14,7 @@ export default function App() {
         <GestureHandlerRootView style={styles.root}>
           <KeyboardProvider>
             <NavigationContainer>
-              <AuthStackNavigator />
+              <RootNavigator />
             </NavigationContainer>
             <StatusBar style="light" />
           </KeyboardProvider>
