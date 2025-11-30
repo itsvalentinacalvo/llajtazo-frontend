@@ -3,11 +3,12 @@ import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import InterestsScreen from "@/src/modules/auth/screens/InterestsScreen";
 
 describe("InterestsScreen", () => {
-  const navigationMock = { navigate: jest.fn() };
+  const navigationMock = { navigate: jest.fn(), dispatch: jest.fn() };
 
   beforeEach(() => {
     jest.clearAllMocks();
     navigationMock.navigate.mockClear();
+    navigationMock.dispatch.mockClear();
   });
 
   it("renderiza título y subtítulo", () => {
@@ -24,7 +25,7 @@ describe("InterestsScreen", () => {
     fireEvent.press(teatro);
     fireEvent.press(musica);
 
-    expect(navigationMock.navigate).not.toHaveBeenCalled();
+    expect(navigationMock.dispatch).not.toHaveBeenCalled();
   });
 
   describe("Validación de selección mínima", () => {
@@ -36,7 +37,7 @@ describe("InterestsScreen", () => {
       await waitFor(() => {
         expect(getByText("Se debe seleccionar al menos una palabra clave")).toBeTruthy();
       });
-      expect(navigationMock.navigate).not.toHaveBeenCalled();
+      expect(navigationMock.dispatch).not.toHaveBeenCalled();
     });
   });
 
@@ -48,7 +49,13 @@ describe("InterestsScreen", () => {
       fireEvent.press(getByText("FINALIZAR"));
 
       await waitFor(() => {
-        expect(navigationMock.navigate).toHaveBeenCalledWith("MainApp", { screen: "ExplorarTab" });
+        expect(navigationMock.dispatch).toHaveBeenCalledWith({
+          type: "RESET",
+          payload: {
+            index: 0,
+            routes: [{ name: "MainApp", params: { screen: "ExplorarTab" } }],
+          },
+        });
       });
     });
 
@@ -61,7 +68,13 @@ describe("InterestsScreen", () => {
       fireEvent.press(getByText("FINALIZAR"));
 
       await waitFor(() => {
-        expect(navigationMock.navigate).toHaveBeenCalledWith("MainApp", { screen: "ExplorarTab" });
+        expect(navigationMock.dispatch).toHaveBeenCalledWith({
+          type: "RESET",
+          payload: {
+            index: 0,
+            routes: [{ name: "MainApp", params: { screen: "ExplorarTab" } }],
+          },
+        });
       });
     });
   });

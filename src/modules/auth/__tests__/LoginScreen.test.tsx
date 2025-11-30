@@ -6,6 +6,7 @@ import { TEST_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
 describe("LoginScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (global as any).mockDispatch = jest.fn();
   });
 
   it("renderiza el título correctamente", () => {
@@ -101,7 +102,13 @@ describe("LoginScreen", () => {
       fireEvent.press(getByText("INICIAR SESIÓN"));
 
       await waitFor(() => {
-        expect((global as any).mockNavigate).toHaveBeenCalledWith("MainApp", { screen: "EventosTab" });
+        expect((global as any).mockDispatch).toHaveBeenCalledWith({
+          type: "RESET",
+          payload: {
+            index: 0,
+            routes: [{ name: "MainApp", params: { screen: "EventosTab" } }],
+          },
+        });
       });
     });
   });
