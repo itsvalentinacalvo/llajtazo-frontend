@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { View, StyleSheet, Pressable, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CommonActions } from "@react-navigation/native";
 
 import { ScreenScrollView } from "@/src/core/components/ScreenScrollView";
 import { ThemedText } from "@/src/core/components/ThemedText";
@@ -73,9 +74,17 @@ export default function InterestsScreen({ navigation }: any) {
     }
 
     setError(undefined);
-    navigation.navigate("MainApp", {
-      screen: "ExplorarTab",
-    });
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          {
+            name: "MainApp",
+            params: { screen: "ExplorarTab" },
+          },
+        ],
+      })
+    );
   };
 
   return (

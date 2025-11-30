@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { View, Text, StyleSheet, Pressable, Switch } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "@/src/modules/auth/navigation/AuthStackNavigator";
 import AuthInput from "@/src/modules/auth/components/AuthInput";
@@ -76,7 +76,17 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     if (validateForm()) {
-      navigation.navigate("MainApp", { screen: "EventosTab" });
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [
+            {
+              name: "MainApp",
+              params: { screen: "EventosTab" },
+            },
+          ],
+        })
+      );
     }
   };
 

@@ -2,6 +2,7 @@
 // Definir mocks globales reutilizables
 global.mockNavigate = jest.fn();
 global.mockGoBack = jest.fn();
+global.mockDispatch = jest.fn();
 
 // Route mock for screens that receive params
 global.mockRoute = { params: {} };
@@ -11,8 +12,12 @@ jest.mock("@react-navigation/native", () => ({
   useNavigation: () => ({
     navigate: global.mockNavigate,
     goBack: global.mockGoBack,
+    dispatch: global.mockDispatch,
   }),
   useRoute: () => global.mockRoute,
+  CommonActions: {
+    reset: (config) => ({ type: "RESET", payload: config }),
+  },
 }));
 
 // Safe area y header
