@@ -1,5 +1,12 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Image, ImageSourcePropType, Dimensions } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  Image,
+  ImageSourcePropType,
+  Dimensions,
+} from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { BorderRadius, Spacing, Shadows } from "@/src/core/constants/theme";
@@ -49,7 +56,10 @@ export function EventCardSmall({
           {title}
         </ThemedText>
         {subtitle ? (
-          <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]} numberOfLines={1}>
+          <ThemedText
+            style={[styles.subtitle, { color: theme.textSecondary }]}
+            numberOfLines={1}
+          >
             {subtitle}
           </ThemedText>
         ) : null}
@@ -60,7 +70,10 @@ export function EventCardSmall({
             color={theme.textSecondary}
             style={styles.locationIcon}
           />
-          <ThemedText style={[styles.location, { color: theme.textSecondary }]} numberOfLines={1}>
+          <ThemedText
+            style={[styles.location, { color: theme.textSecondary }]}
+            numberOfLines={1}
+          >
             {location}
           </ThemedText>
         </View>
@@ -84,7 +97,7 @@ const styles = StyleSheet.create({
     height: 130,
     borderTopLeftRadius: BorderRadius.md,
     borderTopRightRadius: BorderRadius.md,
-    overflow: 'hidden',
+    overflow: "hidden",
     position: "relative",
   },
   eventImage: {
@@ -119,6 +132,8 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.sm,
+    height: 60,
+    justifyContent: "flex-start",
   },
   title: {
     fontSize: 14,
@@ -128,11 +143,12 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 12,
-    marginBottom: 4,
+    height: 16,
   },
   locationRow: {
     flexDirection: "row",
     alignItems: "center",
+    marginTop: "auto",
   },
   locationIcon: {
     marginRight: 3,

@@ -13,7 +13,7 @@ export const Colors = {
     text: "#1A1A1A",
     textSecondary: "#747688",
     buttonText: "#FFFFFF",
-    tabIconDefault: "#747688",
+    tabIconDefault: "#D5D7DC",
     tabIconSelected: primaryBlue,
     link: primaryBlue,
     white: "#FFFFFF",
