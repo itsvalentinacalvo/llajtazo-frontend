@@ -1,25 +1,28 @@
 import React from "react";
 import { View, StyleSheet, Pressable } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { Spacing, Typography } from "@/src/core/constants/theme";
 
-type TabIconName = "compass" | "calendar" | "map" | "user";
+type IconFamily = "ionicons" | "fontawesome" | "fontawesome6";
 
 interface TabConfig {
   name: string;
   label: string;
-  icon: TabIconName;
+  icon: string;
+  iconFamily: IconFamily;
 }
 
 const TAB_CONFIG: TabConfig[] = [
-  { name: "ExplorarTab", label: "Explorar", icon: "compass" },
-  { name: "EventosTab", label: "Eventos", icon: "calendar" },
-  { name: "MapaTab", label: "Mapa", icon: "map" },
-  { name: "PerfilTab", label: "Perfil", icon: "user" },
+  { name: "ExplorarTab", label: "Explorar", icon: "compass", iconFamily: "ionicons" },
+  { name: "EventosTab", label: "Eventos", icon: "calendar", iconFamily: "ionicons" },
+  { name: "MapaTab", label: "Mapa", icon: "location-dot", iconFamily: "fontawesome6" },
+  { name: "PerfilTab", label: "Perfil", icon: "user", iconFamily: "fontawesome" },
 ];
 
 export function CoreTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -52,6 +55,21 @@ export function CoreTabBar({ state, descriptors, navigation }: BottomTabBarProps
       });
     };
 
+    const iconColor = isFocused ? theme.tabIconSelected : theme.tabIconDefault;
+
+    const renderIcon = () => {
+      switch (tabConfig.iconFamily) {
+        case "ionicons":
+          return <Ionicons name={tabConfig.icon as any} size={24} color={iconColor} />;
+        case "fontawesome":
+          return <FontAwesome name={tabConfig.icon as any} size={24} color={iconColor} />;
+        case "fontawesome6":
+          return <FontAwesome6 name={tabConfig.icon as any} size={24} color={iconColor} />;
+        default:
+          return null;
+      }
+    };
+
     return (
       <Pressable
         key={route.key}
@@ -62,15 +80,11 @@ export function CoreTabBar({ state, descriptors, navigation }: BottomTabBarProps
         onLongPress={onLongPress}
         style={styles.tabItem}
       >
-        <Feather
-          name={tabConfig.icon}
-          size={24}
-          color={isFocused ? theme.tabIconSelected : theme.tabIconDefault}
-        />
+        {renderIcon()}
         <ThemedText
           style={[
             styles.tabLabel,
-            { color: isFocused ? theme.tabIconSelected : theme.tabIconDefault },
+            { color: iconColor },
           ]}
         >
           {tabConfig.label}

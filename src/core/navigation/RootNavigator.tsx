@@ -24,7 +24,7 @@ try {
 
 export default function RootNavigator() {
   // TODO: cambiar cuando implementen login real
-  const isAuthenticated = true; // por ahora siempre falso
+  const isAuthenticated = false; // por ahora siempre falso
   const [isLoading, setIsLoading] = useState(true);
 
   // Simulación de splash/load al iniciar la app

@@ -10,7 +10,7 @@ export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   ResetPassword: undefined;
-  Verification: undefined;
+  Verification: { email: string };
   Interests: undefined;
   MainApp: {
     screen: string;

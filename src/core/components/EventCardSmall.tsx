@@ -5,15 +5,14 @@ import {
   Pressable,
   Image,
   ImageSourcePropType,
-  Dimensions,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { BorderRadius, Spacing, Shadows } from "@/src/core/constants/theme";
 import { useTheme } from "@/src/core/hooks/useTheme";
 
-const SCREEN_WIDTH = Dimensions.get("window").width;
-const CARD_WIDTH = (SCREEN_WIDTH - Spacing.xl * 2 - Spacing.md) / 2;
+const IMAGE_HEIGHT_RATIO = 0.79;
+const CONTENT_HEIGHT = 60;
 
 interface EventCardSmallProps {
   title: string;
@@ -21,6 +20,8 @@ interface EventCardSmallProps {
   date: { day: string; month: string };
   location: string;
   image: ImageSourcePropType;
+  cardWidth: number;
+  noMargin?: boolean;
   onPress?: () => void;
 }
 
@@ -30,20 +31,25 @@ export function EventCardSmall({
   date,
   location,
   image,
+  cardWidth,
+  noMargin = false,
   onPress,
 }: EventCardSmallProps) {
   const { theme } = useTheme();
+  const imageHeight = cardWidth * IMAGE_HEIGHT_RATIO;
 
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.container,
+        { width: cardWidth },
+        noMargin && { marginBottom: 0 },
         Shadows.card,
         pressed && styles.pressed,
       ]}
     >
-      <View style={styles.imageContainer}>
+      <View style={[styles.imageContainer, { height: imageHeight }]}>
         <Image source={image} style={styles.eventImage} resizeMode="cover" />
         <View style={styles.dateBadge}>
           <ThemedText style={styles.dateDay}>{date.day}</ThemedText>
@@ -84,7 +90,6 @@ export function EventCardSmall({
 
 const styles = StyleSheet.create({
   container: {
-    width: CARD_WIDTH,
     backgroundColor: "#FFFFFF",
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.md,
@@ -94,7 +99,6 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: "100%",
-    height: 130,
     borderTopLeftRadius: BorderRadius.md,
     borderTopRightRadius: BorderRadius.md,
     overflow: "hidden",
@@ -132,8 +136,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.sm,
-    height: 60,
-    justifyContent: "flex-start",
+    height: CONTENT_HEIGHT,
   },
   title: {
     fontSize: 14,
@@ -143,12 +146,12 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 12,
-    height: 16,
+    marginBottom: 2,
   },
   locationRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: "auto",
+    marginTop: 2,
   },
   locationIcon: {
     marginRight: 3,

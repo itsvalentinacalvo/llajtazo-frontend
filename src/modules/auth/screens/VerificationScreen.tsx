@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { AuthStackParamList } from "@/src/modules/auth/navigation/AuthStackNavigator";
@@ -9,17 +9,25 @@ import CodeInput from "@/src/modules/auth/components/CodeInput";
 import { ScreenKeyboardAwareScrollView } from "@/src/core/components/ScreenKeyboardAwareScrollView";
 import { Colors, Spacing, Typography } from "@/src/core/constants/theme";
 import PrimaryButton from "@/src/modules/auth/components/PrimaryButton";
+import { TEST_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
 
 type VerificationScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
   "Verification"
 >;
 
+type VerificationScreenRouteProp = RouteProp<AuthStackParamList, "Verification">;
+
 export default function VerificationScreen() {
   const navigation = useNavigation<VerificationScreenNavigationProp>();
+  const route = useRoute<VerificationScreenRouteProp>();
   const insets = useSafeAreaInsets();
   const [code, setCode] = useState("");
   const [timer, setTimer] = useState(20);
+  const [error, setError] = useState<string | undefined>(undefined);
+  const [shake, setShake] = useState(false);
+
+  const userEmail = route.params?.email || "abc@email.com";
 
   useEffect(() => {
     if (timer > 0) {
@@ -30,13 +38,32 @@ export default function VerificationScreen() {
     }
   }, [timer]);
 
+  const triggerShake = useCallback(() => {
+    setShake(true);
+    setTimeout(() => setShake(false), 300);
+  }, []);
+
   const handleContinue = () => {
+    if (code.length < 4) {
+      setError("Debes ingresar el código completo");
+      triggerShake();
+      return;
+    }
+
+    if (code !== TEST_CREDENTIALS.verificationCode) {
+      setError("El código ingresado es incorrecto");
+      triggerShake();
+      return;
+    }
+
+    setError(undefined);
     navigation.navigate("Interests");
   };
 
   const handleResend = () => {
     if (timer === 0) {
       setTimer(20);
+      setError(undefined);
       console.log("Resend code");
     }
   };
@@ -49,6 +76,13 @@ export default function VerificationScreen() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const handleCodeChange = (newCode: string) => {
+    setCode(newCode);
+    if (error) {
+      setError(undefined);
+    }
   };
 
   return (
@@ -69,10 +103,16 @@ export default function VerificationScreen() {
         <View style={styles.formContainer}>
           <Text style={styles.title}>Verificación</Text>
           <Text style={styles.subtitle}>
-            Te enviamos un código al correo{"\n"}abc@email.com
+            Te enviamos un código al correo{"\n"}{userEmail}
           </Text>
 
-          <CodeInput length={4} onComplete={setCode} />
+          <CodeInput 
+            length={4} 
+            onComplete={setCode} 
+            onCodeChange={handleCodeChange}
+            error={error}
+            shake={shake}
+          />
 
           <PrimaryButton
             title="CONTINUAR"
@@ -81,7 +121,7 @@ export default function VerificationScreen() {
           />
 
           <View style={styles.resendContainer}>
-            <Text style={styles.resendText}>Reenviar código </Text>
+            <Text style={styles.resendText}>Reenviar código en </Text>
             {timer === 0 ? (
               <Pressable onPress={handleResend} accessibilityRole="button">
                 <Text style={[styles.resendTimer, styles.resendTimerActive]}>

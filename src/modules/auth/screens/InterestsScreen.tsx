@@ -1,8 +1,7 @@
-import { useState } from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { useState, useCallback } from "react";
+import { View, StyleSheet, Pressable, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-//COMPONENTES GLOBALES DEL PROYECTO
 import { ScreenScrollView } from "@/src/core/components/ScreenScrollView";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { Spacing, BorderRadius } from "@/src/core/constants/theme";
@@ -49,16 +48,33 @@ export default function InterestsScreen({ navigation }: any) {
 
   const [selectedInterests, setSelectedInterests] =
     useState<string[]>(initialSelected);
+  const [error, setError] = useState<string | undefined>(undefined);
+  const [shake, setShake] = useState(false);
+
+  const triggerShake = useCallback(() => {
+    setShake(true);
+    setTimeout(() => setShake(false), 300);
+  }, []);
 
   const toggleInterest = (id: string) => {
     setSelectedInterests((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
+    if (error) {
+      setError(undefined);
+    }
   };
 
   const handleContinue = () => {
+    if (selectedInterests.length === 0) {
+      setError("Se debe seleccionar al menos una palabra clave");
+      triggerShake();
+      return;
+    }
+
+    setError(undefined);
     navigation.navigate("MainApp", {
-      screen: "Home",
+      screen: "ExplorarTab",
     });
   };
 
@@ -92,10 +108,16 @@ export default function InterestsScreen({ navigation }: any) {
                 isSelected={isSelected}
                 isSpecial={interest.isSpecial}
                 onPress={() => toggleInterest(interest.id)}
+                hasError={!!error}
+                shake={shake}
               />
             );
           })}
         </View>
+
+        {error ? (
+          <Text style={styles.errorText}>{error}</Text>
+        ) : null}
 
         <View style={styles.buttonWrapper}>
           <Pressable
@@ -120,6 +142,8 @@ interface PillProps {
   isSelected: boolean;
   isSpecial?: boolean;
   onPress: () => void;
+  hasError?: boolean;
+  shake?: boolean;
 }
 
 function InterestPill({
@@ -127,6 +151,8 @@ function InterestPill({
   isSelected,
   isSpecial,
   onPress,
+  hasError,
+  shake,
 }: PillProps) {
   const getBackgroundColor = () => {
     if (!isSelected) return "#FFFFFF";
@@ -136,6 +162,13 @@ function InterestPill({
 
   const getTextColor = () => {
     if (isSelected) return "#FFFFFF";
+    if (hasError && !isSelected) return "#FF5757";
+    return "#2BBBFF";
+  };
+
+  const getBorderColor = () => {
+    if (isSelected) return getBackgroundColor();
+    if (hasError) return "#FF5757";
     return "#2BBBFF";
   };
 
@@ -146,7 +179,7 @@ function InterestPill({
         styles.pill,
         {
           backgroundColor: getBackgroundColor(),
-          borderColor: isSelected ? getBackgroundColor() : "#2BBBFF",
+          borderColor: getBorderColor(),
           opacity: pressed ? 0.7 : 1,
         },
       ]}
@@ -199,6 +232,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     textAlign: "center",
+  },
+
+  errorText: {
+    color: "#FF5757",
+    fontSize: 13,
+    textAlign: "center",
+    marginTop: Spacing.md,
   },
 
   buttonWrapper: {

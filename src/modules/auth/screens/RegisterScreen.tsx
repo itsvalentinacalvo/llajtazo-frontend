@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,11 +11,18 @@ import SocialButton from "@/src/modules/auth/components/SocialButton";
 import Divider from "@/src/modules/auth/components/Divider";
 import { ScreenKeyboardAwareScrollView } from "@/src/core/components/ScreenKeyboardAwareScrollView";
 import { Colors, Spacing, Typography } from "@/src/core/constants/theme";
+import { TEST_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
   "Register"
 >;
+
+interface FormErrors {
+  fullName?: string;
+  email?: string;
+  password?: string;
+}
 
 export default function RegisterScreen() {
   const navigation = useNavigation<RegisterScreenNavigationProp>();
@@ -23,9 +30,69 @@ export default function RegisterScreen() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [shakeFields, setShakeFields] = useState<{ [key: string]: boolean }>({});
+
+  const triggerShake = useCallback((fields: string[]) => {
+    const shakeState: { [key: string]: boolean } = {};
+    fields.forEach((field) => {
+      shakeState[field] = true;
+    });
+    setShakeFields(shakeState);
+    setTimeout(() => setShakeFields({}), 300);
+  }, []);
+
+  const validatePassword = (pwd: string): string | undefined => {
+    if (!pwd.trim()) {
+      return "Este campo no puede estar vacío";
+    }
+    if (pwd.length < 8) {
+      return "Debe tener un mínimo de 8 caracteres";
+    }
+    if (!/[A-Z]/.test(pwd)) {
+      return "Debe contener al menos una mayúscula";
+    }
+    if (!/[0-9]/.test(pwd)) {
+      return "Debe contener al menos un número";
+    }
+    return undefined;
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    const fieldsToShake: string[] = [];
+
+    if (!fullName.trim()) {
+      newErrors.fullName = "Este campo no puede estar vacío";
+      fieldsToShake.push("fullName");
+    }
+
+    if (!email.trim()) {
+      newErrors.email = "Este campo no puede estar vacío";
+      fieldsToShake.push("email");
+    } else if (email.toLowerCase() === TEST_CREDENTIALS.email.toLowerCase()) {
+      newErrors.email = "Ese correo ya se encuentra registrado";
+      fieldsToShake.push("email");
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      newErrors.password = passwordError;
+      fieldsToShake.push("password");
+    }
+
+    setErrors(newErrors);
+    if (fieldsToShake.length > 0) {
+      triggerShake(fieldsToShake);
+    }
+
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleRegister = () => {
-    navigation.navigate("Verification");
+    if (validateForm()) {
+      navigation.navigate("Verification", { email });
+    }
   };
 
   const handleGoogleRegister = () => {
@@ -38,6 +105,12 @@ export default function RegisterScreen() {
 
   const handleNavigateToLogin = () => {
     navigation.navigate("Login");
+  };
+
+  const clearError = (field: keyof FormErrors) => {
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
   };
 
   return (
@@ -70,21 +143,36 @@ export default function RegisterScreen() {
               icon="user"
               placeholder="Nombre Completo"
               value={fullName}
-              onChangeText={setFullName}
+              onChangeText={(text) => {
+                setFullName(text);
+                clearError("fullName");
+              }}
+              error={errors.fullName}
+              shake={shakeFields.fullName}
             />
             <AuthInput
               icon="mail"
               placeholder="abc@email.com"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                clearError("email");
+              }}
               keyboardType="email-address"
+              error={errors.email}
+              shake={shakeFields.email}
             />
             <AuthInput
               icon="lock"
               placeholder="Contraseña"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                clearError("password");
+              }}
               secureTextEntry
+              error={errors.password}
+              shake={shakeFields.password}
             />
 
             <PrimaryButton

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -9,6 +9,7 @@ import AuthInput from "@/src/modules/auth/components/AuthInput";
 import PrimaryButton from "@/src/modules/auth/components/PrimaryButton";
 import { ScreenKeyboardAwareScrollView } from "@/src/core/components/ScreenKeyboardAwareScrollView";
 import { Colors, Spacing, Typography } from "@/src/core/constants/theme";
+import { TEST_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
 
 type ResetPasswordScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
@@ -19,13 +20,39 @@ export default function ResetPasswordScreen() {
   const navigation = useNavigation<ResetPasswordScreenNavigationProp>();
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | undefined>(undefined);
+  const [shake, setShake] = useState(false);
+
+  const triggerShake = useCallback(() => {
+    setShake(true);
+    setTimeout(() => setShake(false), 300);
+  }, []);
 
   const handleSend = () => {
-    console.log("Send reset password pressed");
+    if (!email.trim()) {
+      setError("Este campo no puede estar vacío");
+      triggerShake();
+      return;
+    }
+
+    if (email.toLowerCase() !== TEST_CREDENTIALS.email.toLowerCase()) {
+      setError("No se encontró una cuenta con este correo");
+      triggerShake();
+      return;
+    }
+
+    setError(undefined);
+    console.log("Reset password email sent");
   };
 
   const handleGoBack = () => {
     navigation.goBack();
+  };
+
+  const clearError = () => {
+    if (error) {
+      setError(undefined);
+    }
   };
 
   return (
@@ -55,8 +82,13 @@ export default function ResetPasswordScreen() {
               icon="mail"
               placeholder="abc@email.com"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                clearError();
+              }}
               keyboardType="email-address"
+              error={error}
+              shake={shake}
             />
 
             <PrimaryButton title="ENVIAR" onPress={handleSend} />

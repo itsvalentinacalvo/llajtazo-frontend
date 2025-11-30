@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { View, Text, StyleSheet, Pressable, Switch } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,11 +11,18 @@ import SocialButton from "@/src/modules/auth/components/SocialButton";
 import Divider from "@/src/modules/auth/components/Divider";
 import { ScreenKeyboardAwareScrollView } from "@/src/core/components/ScreenKeyboardAwareScrollView";
 import { Colors, Spacing, Typography } from "@/src/core/constants/theme";
+import { TEST_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
   "Login"
 >;
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+  general?: string;
+}
 
 export default function LoginScreen() {
   const navigation = useNavigation<LoginScreenNavigationProp>();
@@ -23,9 +30,54 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [shakeFields, setShakeFields] = useState<{ [key: string]: boolean }>({});
+
+  const triggerShake = useCallback((fields: string[]) => {
+    const shakeState: { [key: string]: boolean } = {};
+    fields.forEach((field) => {
+      shakeState[field] = true;
+    });
+    setShakeFields(shakeState);
+    setTimeout(() => setShakeFields({}), 300);
+  }, []);
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    const fieldsToShake: string[] = [];
+
+    if (!email.trim()) {
+      newErrors.email = "Este campo no puede estar vacío";
+      fieldsToShake.push("email");
+    }
+
+    if (!password.trim()) {
+      newErrors.password = "Este campo no puede estar vacío";
+      fieldsToShake.push("password");
+    }
+
+    if (!newErrors.email && !newErrors.password) {
+      const emailMatches = email.toLowerCase() === TEST_CREDENTIALS.email.toLowerCase();
+      const passwordMatches = password === TEST_CREDENTIALS.password;
+
+      if (!emailMatches || !passwordMatches) {
+        newErrors.general = "Correo o contraseña incorrectos";
+        fieldsToShake.push("email", "password");
+      }
+    }
+
+    setErrors(newErrors);
+    if (fieldsToShake.length > 0) {
+      triggerShake(fieldsToShake);
+    }
+
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleLogin = () => {
-    console.log("Log in pressed");
+    if (validateForm()) {
+      navigation.navigate("MainApp", { screen: "EventosTab" });
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -43,6 +95,12 @@ export default function LoginScreen() {
   const handleNavigateToRegister = () => {
     navigation.navigate("Register");
   };
+
+  const clearError = (field: keyof FormErrors) => {
+    setErrors((prev) => ({ ...prev, [field]: undefined, general: undefined }));
+  };
+
+  const hasGeneralError = !!errors.general;
 
   return (
     <LinearGradient
@@ -74,16 +132,30 @@ export default function LoginScreen() {
               icon="mail"
               placeholder="abc@email.com"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                clearError("email");
+              }}
               keyboardType="email-address"
+              error={errors.email || (hasGeneralError && !errors.email ? " " : undefined)}
+              shake={shakeFields.email}
             />
             <AuthInput
               icon="lock"
               placeholder="Contraseña"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                clearError("password");
+              }}
               secureTextEntry
+              error={errors.password || (hasGeneralError && !errors.password ? " " : undefined)}
+              shake={shakeFields.password}
             />
+
+            {hasGeneralError ? (
+              <Text style={styles.generalError}>{errors.general}</Text>
+            ) : null}
 
             <View style={styles.rememberContainer}>
               <View style={styles.switchContainer}>
@@ -160,6 +232,13 @@ const styles = StyleSheet.create({
   inputsContainer: {
     marginTop: Spacing.lg,
     alignItems: "center",
+  },
+  generalError: {
+    color: "#FF5757",
+    fontSize: 12,
+    alignSelf: "flex-start",
+    marginTop: -8,
+    marginBottom: 8,
   },
   rememberContainer: {
     width: "100%",

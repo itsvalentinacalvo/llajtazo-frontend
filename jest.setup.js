@@ -3,9 +3,16 @@
 global.mockNavigate = jest.fn();
 global.mockGoBack = jest.fn();
 
+// Route mock for screens that receive params
+global.mockRoute = { params: {} };
+
 // Navigation
 jest.mock("@react-navigation/native", () => ({
-  useNavigation: () => ({ navigate: global.mockNavigate, goBack: global.mockGoBack }),
+  useNavigation: () => ({
+    navigate: global.mockNavigate,
+    goBack: global.mockGoBack,
+  }),
+  useRoute: () => global.mockRoute,
 }));
 
 // Safe area y header
@@ -33,8 +40,12 @@ jest.mock("@expo/vector-icons", () => {
 // Componentes de Auth (mocks simples para tests unitarios)
 jest.mock("@/src/modules/auth/components/AuthInput", () => {
   const React = require("react");
-  const { TextInput } = require("react-native");
-  return (props) => React.createElement(TextInput, { ...props, testID: props.placeholder });
+  const { View, TextInput, Text } = require("react-native");
+  return (props) =>
+    React.createElement(View, null,
+      React.createElement(TextInput, { ...props, testID: props.placeholder }),
+      props.error && props.error.trim() ? React.createElement(Text, null, props.error) : null
+    );
 });
 
 jest.mock("@/src/modules/auth/components/PrimaryButton", () => {
@@ -45,14 +56,19 @@ jest.mock("@/src/modules/auth/components/PrimaryButton", () => {
     React.createElement(
       Pressable,
       { onPress: props.disabled ? undefined : props.onPress },
-      React.createElement(Text, null, props.title)
+      React.createElement(Text, null, props.title),
     );
 });
 
 jest.mock("@/src/modules/auth/components/SocialButton", () => {
   const React = require("react");
   const { Pressable, Text } = require("react-native");
-  return (props) => React.createElement(Pressable, { onPress: props.onPress }, React.createElement(Text, null, props.title));
+  return (props) =>
+    React.createElement(
+      Pressable,
+      { onPress: props.onPress },
+      React.createElement(Text, null, props.title),
+    );
 });
 
 jest.mock("@/src/modules/auth/components/Divider", () => {
@@ -64,32 +80,47 @@ jest.mock("@/src/modules/auth/components/Divider", () => {
 // Mock CodeInput used in VerificationScreen
 jest.mock("@/src/modules/auth/components/CodeInput", () => {
   const React = require("react");
-  const { TextInput } = require("react-native");
-  // This mock forwards text changes to onComplete so tests can simulate entering the code
-  return (props) => React.createElement(TextInput, {
-    testID: "code-input",
-    onChangeText: (text) => props.onComplete && props.onComplete(text),
-  });
+  const { View, TextInput, Text } = require("react-native");
+  // This mock forwards text changes to onComplete and onCodeChange so tests can simulate entering the code
+  return (props) =>
+    React.createElement(View, null,
+      React.createElement(TextInput, {
+        testID: "code-input",
+        onChangeText: (text) => {
+          props.onComplete && props.onComplete(text);
+          props.onCodeChange && props.onCodeChange(text);
+        },
+      }),
+      props.error ? React.createElement(Text, null, props.error) : null
+    );
 });
 
 // Exportar named `ScreenKeyboardAwareScrollView` para coincidir con importaciones
 jest.mock("@/src/core/components/ScreenKeyboardAwareScrollView", () => {
   const React = require("react");
   const { View } = require("react-native");
-  return { ScreenKeyboardAwareScrollView: ({ children }) => React.createElement(View, null, children) };
+  return {
+    ScreenKeyboardAwareScrollView: ({ children }) =>
+      React.createElement(View, null, children),
+  };
 });
 
 // Global mocks para componentes de layout y hooks usados en varias pantallas
 jest.mock("@/src/core/components/ScreenScrollView", () => {
   const React = require("react");
   const { View } = require("react-native");
-  return { ScreenScrollView: ({ children }) => React.createElement(View, null, children) };
+  return {
+    ScreenScrollView: ({ children }) =>
+      React.createElement(View, null, children),
+  };
 });
 
 jest.mock("@/src/core/components/ThemedText", () => {
   const React = require("react");
   const { Text } = require("react-native");
-  return { ThemedText: (props) => React.createElement(Text, props, props.children) };
+  return {
+    ThemedText: (props) => React.createElement(Text, props, props.children),
+  };
 });
 
 jest.mock("@/src/core/hooks/useTheme", () => {
@@ -99,4 +130,5 @@ jest.mock("@/src/core/hooks/useTheme", () => {
 // Optional: limpiar mocks antes de cada test (si prefieres centralizarlo aquí)
 beforeEach(() => {
   jest.clearAllMocks();
+  global.mockRoute = { params: {} };
 });
