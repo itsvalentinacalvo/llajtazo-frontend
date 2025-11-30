@@ -30,7 +30,7 @@ export function InviteCard({ onPress }: InviteCardProps) {
         </Pressable>
       </View>
       <Image
-        source={require("@/attached_assets/invite-hands-gift.png")}
+        source={require("@/src/core/assets/invite-hands-gift.png")}
         style={styles.illustration}
         resizeMode="cover"
       />
