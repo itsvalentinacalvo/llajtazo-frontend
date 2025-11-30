@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { View, StyleSheet, Pressable, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CommonActions } from "@react-navigation/native";
 
 import { ScreenScrollView } from "@/src/core/components/ScreenScrollView";
 import { ThemedText } from "@/src/core/components/ThemedText";
@@ -44,7 +43,7 @@ const interests: Interest[] = [
 
 const initialSelected: string[] = [];
 
-export default function InterestsScreen({ navigation }: any) {
+export default function InterestsScreen({ navigation, onAuthSuccess }: any) {
   const insets = useSafeAreaInsets();
 
   const [selectedInterests, setSelectedInterests] =
@@ -74,17 +73,13 @@ export default function InterestsScreen({ navigation }: any) {
     }
 
     setError(undefined);
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [
-          {
-            name: "MainApp",
-            params: { screen: "ExplorarTab" },
-          },
-        ],
-      })
-    );
+    if (onAuthSuccess) {
+      onAuthSuccess();
+    } else {
+      navigation.navigate("MainApp", {
+        screen: "ExplorarTab",
+      });
+    }
   };
 
   return (

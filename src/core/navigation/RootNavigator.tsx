@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import AuthStackNavigator from "@/src/modules/auth/navigation/AuthStackNavigator";
+import MainDrawerNavigator from "@/src/core/navigation/MainDrawerNavigator";
 
 function MainStackPlaceholder() {
   return (
@@ -12,19 +13,11 @@ function MainStackPlaceholder() {
 
 // Estos imports serán reemplazados por los módulos reales cuando existan
 // `AuthStackNavigator` se importa estáticamente porque ya está implementado
-let MainStackNavigator: any = MainStackPlaceholder;
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const mainMod = require("@/src/modules/home/navigation/MainTabNavigator");
-  MainStackNavigator = mainMod?.default ?? mainMod;
-} catch {
-  // keep placeholder
-}
+let MainStackNavigator: any = MainDrawerNavigator ?? MainStackPlaceholder;
 
 export default function RootNavigator() {
   // TODO: cambiar cuando implementen login real
-  const isAuthenticated = false; // por ahora siempre falso
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // por ahora falso y controlable
   const [isLoading, setIsLoading] = useState(true);
 
   // Simulación de splash/load al iniciar la app
@@ -42,5 +35,9 @@ export default function RootNavigator() {
     );
   }
 
-  return isAuthenticated ? <MainStackNavigator /> : <AuthStackNavigator />;
+  return isAuthenticated ? (
+    <MainStackNavigator />
+  ) : (
+    <AuthStackNavigator onAuthSuccess={() => setIsAuthenticated(true)} />
+  );
 }
