@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, StyleSheet, Pressable, ImageSourcePropType, Dimensions, Image } from "react-native";
+import { View, StyleSheet, Pressable, ImageSourcePropType } from "react-native";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { BorderRadius, Spacing } from "@/src/core/constants/theme";
 import { LinearGradient } from "expo-linear-gradient";
@@ -12,8 +12,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Image as ExpoImage } from "expo-image";
 
-const SCREEN_WIDTH = Dimensions.get("window").width;
-const BANNER_WIDTH = SCREEN_WIDTH - Spacing.xl * 2;
+
 
 interface SponsoredBannerEvent {
   id: string;
@@ -64,7 +63,7 @@ export function SponsoredBanner({
         clearInterval(intervalRef.current);
       }
     };
-  }, [events.length, autoPlayInterval, currentIndex]);
+  }, [events.length, autoPlayInterval, currentIndex, opacity, translateX]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
