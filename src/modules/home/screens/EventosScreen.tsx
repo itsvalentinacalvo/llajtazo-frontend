@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { View, StyleSheet, FlatList, useWindowDimensions, LayoutChangeEvent } from "react-native";
-import { CoreHeader } from "@/src/core/components/CoreHeader";
+import { View, StyleSheet, FlatList, useWindowDimensions } from "react-native";
+import { useHomeHeader } from "@/src/core/components/HomeHeaderContext";
 import { EventCardSmall } from "@/src/core/components/EventCardSmall";
 import { SectionHeaderLocation } from "@/src/modules/home/components/SectionHeaderLocation";
 import { SponsoredBanner } from "@/src/modules/home/components/SponsoredBanner";
@@ -280,8 +280,7 @@ const GRID_GAP = Spacing.md;
 const HORIZONTAL_PADDING = Spacing.xl;
 
 export default function EventosScreen() {
-  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
-  const [headerHeight, setHeaderHeight] = useState(0);
+  const { headerHeight, selectedCategory, setSelectedCategory } = useHomeHeader();
   const { theme } = useTheme();
   const { paddingBottom } = useScreenInsets();
   const { width: screenWidth } = useWindowDimensions();
@@ -290,10 +289,7 @@ export default function EventosScreen() {
     return (screenWidth - HORIZONTAL_PADDING * 2 - GRID_GAP) / 2;
   }, [screenWidth]);
 
-  const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
-    const { height } = event.nativeEvent.layout;
-    setHeaderHeight(height);
-  }, []);
+  // headerHeight provided by navigator's CoreHeader via HomeHeaderContext
 
   const buildFeedData = (): FeedItem[] => {
     const feedItems: FeedItem[] = [
@@ -333,6 +329,8 @@ export default function EventosScreen() {
   };
 
   const feedData = buildFeedData();
+
+  console.debug("[Home][EventosScreen] render", { feedItems: feedData.length });
 
   const renderItem = ({ item }: { item: FeedItem }) => {
     switch (item.type) {
@@ -395,17 +393,9 @@ export default function EventosScreen() {
           return `item-${index}`;
         }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: headerHeight, paddingBottom }}
+        contentContainerStyle={{ paddingTop: headerHeight + Spacing.sm, paddingBottom }}
       />
-      <View style={styles.headerOverlay} pointerEvents="box-none">
-        <CoreHeader
-          selectedCategory={selectedCategory}
-          onCategoryPress={(cat) =>
-            setSelectedCategory(cat === selectedCategory ? undefined : cat)
-          }
-          onLayout={handleHeaderLayout}
-        />
-      </View>
+      {/* Header rendered by Tab Navigator */}
     </View>
   );
 }

@@ -19,6 +19,7 @@ export function SectionHeaderLocation({
   onLocationPress,
 }: SectionHeaderLocationProps) {
   const { theme } = useTheme();
+  console.debug("[Home][SectionHeaderLocation] render", { title, location, distance });
 
   return (
     <View style={styles.container}>

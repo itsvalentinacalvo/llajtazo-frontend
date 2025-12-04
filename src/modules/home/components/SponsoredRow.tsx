@@ -27,6 +27,7 @@ interface SponsoredRowProps {
 
 export function SponsoredRow({ events, onEventPress }: SponsoredRowProps) {
   const { theme } = useTheme();
+  console.debug("[Home][SponsoredRow] render", { eventsCount: events?.length });
   const { width: screenWidth } = useWindowDimensions();
 
   const cardWidth = useMemo(() => {

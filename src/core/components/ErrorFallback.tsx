@@ -22,6 +22,7 @@ export type ErrorFallbackProps = {
 export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
   const { theme } = useTheme();
   const [isModalVisible, setIsModalVisible] = useState(false);
+  console.debug("[Core][ErrorFallback] render", { message: error?.message });
 
   const handleRestart = async () => {
     try {

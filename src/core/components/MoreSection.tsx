@@ -12,6 +12,7 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ title, onSeeMore }: SectionHeaderProps) {
   const { theme } = useTheme();
+  console.debug("[Core][SectionHeader] render", { title });
 
   return (
     <View style={styles.container}>

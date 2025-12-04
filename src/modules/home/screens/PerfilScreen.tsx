@@ -3,6 +3,7 @@ import { View, StyleSheet } from "react-native";
 import { ThemedText } from "@/src/core/components/ThemedText";
 
 export default function PerfilScreen() {
+  console.debug("[Home][PerfilScreen] render");
   return (
     <View style={styles.container}>
       <ThemedText>Perfil Screen Placeholder</ThemedText>

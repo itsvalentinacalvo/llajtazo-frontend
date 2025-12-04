@@ -45,6 +45,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export function Card({ elevation, onPress }: CardProps) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
+  console.debug("[Core][Card] render", { elevation });
 
   const cardBackgroundColor = getBackgroundColorForElevation(elevation, theme);
 

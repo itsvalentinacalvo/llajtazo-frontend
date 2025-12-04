@@ -36,6 +36,7 @@ export class ErrorBoundary extends Component<
 
   render() {
     const { FallbackComponent } = this.props;
+    console.debug("[Core][ErrorBoundary] render", { hasError: !!this.state.error });
 
     return this.state.error && FallbackComponent ? (
       <FallbackComponent

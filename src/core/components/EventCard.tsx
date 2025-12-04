@@ -23,6 +23,7 @@ export function EventCard({
   onPress,
 }: EventCardProps) {
   const { theme } = useTheme();
+  console.debug("[Core][EventCard] render", { title });
 
   return (
     <Pressable

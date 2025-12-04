@@ -3,13 +3,13 @@ import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { AuthStackParamList } from "@/src/modules/auth/navigation/AuthStackNavigator";
+import { AuthStackParamList } from "@/src/modules/auth/navigation/AuthNavigator";
 import { Feather } from "@expo/vector-icons";
 import AuthInput from "@/src/modules/auth/components/AuthInput";
 import PrimaryButton from "@/src/modules/auth/components/PrimaryButton";
 import { ScreenKeyboardAwareScrollView } from "@/src/core/components/ScreenKeyboardAwareScrollView";
 import { Colors, Spacing, Typography } from "@/src/core/constants/theme";
-import { TEST_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
+import { TEST_CREDENTIALS } from "@/src/core/test/profileData";
 
 type ResetPasswordScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,

@@ -36,6 +36,12 @@ export function Button({
 }: ButtonProps) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
+  console.debug("[Core][Button] render", { disabled });
+
+  const handlePress = () => {
+    console.debug("[Core][Button] press");
+    onPress && onPress();
+  };
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -55,7 +61,7 @@ export function Button({
 
   return (
     <AnimatedPressable
-      onPress={disabled ? undefined : onPress}
+      onPress={disabled ? undefined : handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled}

@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useCallback } from "react";
-import { ScrollView, StyleSheet, View, useWindowDimensions, LayoutChangeEvent } from "react-native";
-import { CoreHeader } from "@/src/core/components/CoreHeader";
+import React, { useMemo, useCallback } from "react";
+import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { useHomeHeader } from "@/src/core/components/HomeHeaderContext";
 import { SectionHeader } from "@/src/core/components/MoreSection";
 import { EventCard } from "@/src/core/components/EventCard";
 import { EventCardSmall } from "@/src/core/components/EventCardSmall";
@@ -142,16 +142,14 @@ const FOR_YOU_EVENTS = [
 export default function ExplorarScreen() {
   const { theme } = useTheme();
   const { width: screenWidth } = useWindowDimensions();
-  const [headerHeight, setHeaderHeight] = useState(0);
+  const { headerHeight } = useHomeHeader();
+  console.debug("[Home][ExplorarScreen] render", { screenWidth });
 
   const cardWidth = useMemo(() => {
     return (screenWidth - HORIZONTAL_PADDING * 2 - GRID_GAP) / 2;
   }, [screenWidth]);
 
-  const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
-    const { height } = event.nativeEvent.layout;
-    setHeaderHeight(height);
-  }, []);
+  // headerHeight is provided by the navigator's CoreHeader via HomeHeaderContext
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -159,7 +157,7 @@ export default function ExplorarScreen() {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: headerHeight }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: headerHeight + Spacing.sm }]}
       >
         <View style={styles.featuredContainer}>
           <SponsoredBanner
@@ -241,15 +239,7 @@ export default function ExplorarScreen() {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
-      <View style={styles.headerOverlay} pointerEvents="box-none">
-        <CoreHeader
-          onNotificationPress={() => console.log("Notifications pressed")}
-          onSearchChange={(text) => console.log("Search:", text)}
-          onFilterPress={() => console.log("Filter pressed")}
-          onCategoryPress={(category) => console.log("Category:", category)}
-          onLayout={handleHeaderLayout}
-        />
-      </View>
+      {/* Header rendered by the Tab Navigator (CoreHeader) */}
     </View>
   );
 }

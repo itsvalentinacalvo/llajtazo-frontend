@@ -11,6 +11,7 @@ export function ScreenFlatList<T>({
 }: FlatListProps<T>) {
   const { theme } = useTheme();
   const { paddingTop, paddingBottom, scrollInsetBottom } = useScreenInsets();
+  console.debug("[Core][ScreenFlatList] render", { paddingTop, paddingBottom });
 
   return (
     <FlatList

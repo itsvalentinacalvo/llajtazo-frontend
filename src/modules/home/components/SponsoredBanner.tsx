@@ -71,6 +71,7 @@ export function SponsoredBanner({
   }));
 
   const currentEvent = events[displayIndex];
+  console.debug("[Home][SponsoredBanner] render", { displayIndex, currentEventId: currentEvent?.id });
 
   if (!currentEvent) return null;
 

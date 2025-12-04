@@ -12,6 +12,7 @@ export function ScreenScrollView({
 }: ScrollViewProps) {
   const { theme } = useTheme();
   const { paddingTop, paddingBottom, scrollInsetBottom } = useScreenInsets();
+  console.debug("[Core][ScreenScrollView] render", { paddingTop, paddingBottom });
 
   return (
     <ScrollView

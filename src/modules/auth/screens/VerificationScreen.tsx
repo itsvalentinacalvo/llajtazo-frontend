@@ -4,12 +4,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
-import { AuthStackParamList } from "@/src/modules/auth/navigation/AuthStackNavigator";
+import { AuthStackParamList } from "@/src/modules/auth/navigation/AuthNavigator";
 import CodeInput from "@/src/modules/auth/components/CodeInput";
 import { ScreenKeyboardAwareScrollView } from "@/src/core/components/ScreenKeyboardAwareScrollView";
 import { Colors, Spacing, Typography } from "@/src/core/constants/theme";
 import PrimaryButton from "@/src/modules/auth/components/PrimaryButton";
-import { TEST_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
+import { TEST_CREDENTIALS } from "@/src/core/test/profileData";
 
 type VerificationScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,

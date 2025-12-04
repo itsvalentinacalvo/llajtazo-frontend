@@ -10,6 +10,7 @@ export function ThemedView({
 }: ThemedViewProps) {
   const { theme } = useTheme();
   const backgroundColor = theme.backgroundRoot;
+  console.debug("[Core][ThemedView] render");
 
   return <View style={[{ backgroundColor }, style]} {...otherProps} />;
 }

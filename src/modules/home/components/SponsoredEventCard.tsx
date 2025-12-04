@@ -31,6 +31,7 @@ export function SponsoredEventCard({
   onPress,
 }: SponsoredEventCardProps) {
   const { theme } = useTheme();
+  console.debug("[Home][SponsoredEventCard] render", { title });
 
   return (
     <View style={[styles.cardWrapper, { width: cardWidth }]}>
