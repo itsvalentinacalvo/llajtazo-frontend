@@ -26,24 +26,11 @@ export default function BurgerMenuScreen(props: any) {
         closeTimeoutRef.current = null;
       }
     };
-  }, []);
+  }, [translateX]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
-
-  const handleGoBack = () => {
-    try {
-      const nav: any = navigation;
-      if (typeof nav.canGoBack === "function") {
-        if (nav.canGoBack()) nav.goBack();
-      } else {
-        nav.goBack && nav.goBack();
-      }
-    } catch (e) {
-      console.warn("BurgerMenu close navigation error:", e);
-    }
-  };
 
   const close = (afterClose?: () => void, skipGoBack: boolean = false) => {
     // prevent double triggers

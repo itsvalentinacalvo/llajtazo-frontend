@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import Animated, {
   useSharedValue,
@@ -111,7 +111,7 @@ export default function SplashScreen({ onReady }: SplashScreenProps) {
       console.debug("[Core][SplashScreen] cleanup");
       clearTimeout(exitTimer);
     };
-  }, [preloadAssets, startExitAnimation]);
+  }, [circleScale, logoOpacity, preloadAssets, startExitAnimation]);
 
   const circleStyle = useAnimatedStyle(() => {
     return {

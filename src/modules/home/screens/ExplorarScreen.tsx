@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useHomeHeader } from "@/src/core/components/HomeHeaderContext";
 import { SectionHeader } from "@/src/core/components/MoreSection";

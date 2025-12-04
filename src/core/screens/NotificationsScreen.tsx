@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -16,11 +16,10 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withSequence,
-  withTiming,
-  runOnJS,
 } from "react-native-reanimated";
+import type { SharedValue } from "react-native-reanimated";
 import { ThemedText } from "@/src/core/components/ThemedText";
-import { Colors, Spacing, BorderRadius, Typography } from "@/src/core/constants/theme";
+import { Colors, Spacing, Typography } from "@/src/core/constants/theme";
 import { PRIMARY_TEST_USER } from "@/src/core/test/testDatabase";
 import { getNotificationsForUser, NotificationItem } from "@/src/core/test/notificationsData";
 
@@ -30,57 +29,70 @@ const STAR_SIZE = 18;
 interface StarRatingProps {
   rating: number;
   onRatingChange?: (rating: number) => void;
-  eventId?: string;
 }
 
-function StarRating({ rating, onRatingChange, eventId }: StarRatingProps) {
+interface StarIconProps {
+  scale: SharedValue<number>;
+  filled: boolean;
+  onPress: () => void;
+}
+
+function StarIcon({ scale, filled, onPress }: StarIconProps) {
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+    >
+      <Animated.View style={animatedStyle}>
+        <FontAwesome5
+          name="star"
+          size={STAR_SIZE}
+          color={STAR_COLOR}
+          solid={filled}
+        />
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+function StarRating({ rating, onRatingChange }: StarRatingProps) {
   const [currentRating, setCurrentRating] = useState(rating);
-  const scales = [
-    useSharedValue(1),
-    useSharedValue(1),
-    useSharedValue(1),
-    useSharedValue(1),
-    useSharedValue(1),
-  ];
+  const scale1 = useSharedValue(1);
+  const scale2 = useSharedValue(1);
+  const scale3 = useSharedValue(1);
+  const scale4 = useSharedValue(1);
+  const scale5 = useSharedValue(1);
+  const scales = useMemo(
+    () => [scale1, scale2, scale3, scale4, scale5],
+    [scale1, scale2, scale3, scale4, scale5]
+  );
 
   const handleStarPress = useCallback((index: number) => {
     const newRating = index + 1;
     setCurrentRating(newRating);
-    
+
     scales[index].value = withSequence(
       withSpring(1.4, { damping: 4, stiffness: 300 }),
       withSpring(1, { damping: 8, stiffness: 200 })
     );
-    
+
     onRatingChange?.(newRating);
   }, [onRatingChange, scales]);
 
   return (
     <View style={starStyles.container}>
-      {[0, 1, 2, 3, 4].map((index) => {
-        const isFilled = index < currentRating;
-        
-        const animatedStyle = useAnimatedStyle(() => ({
-          transform: [{ scale: scales[index].value }],
-        }));
-
-        return (
-          <Pressable
-            key={index}
-            onPress={() => handleStarPress(index)}
-            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-          >
-            <Animated.View style={animatedStyle}>
-              <FontAwesome5
-                name="star"
-                size={STAR_SIZE}
-                color={STAR_COLOR}
-                solid={isFilled}
-              />
-            </Animated.View>
-          </Pressable>
-        );
-      })}
+      {scales.map((scale, index) => (
+        <StarIcon
+          key={index}
+          scale={scale}
+          filled={index < currentRating}
+          onPress={() => handleStarPress(index)}
+        />
+      ))}
     </View>
   );
 }
@@ -130,7 +142,6 @@ function NotificationRow({ item, onRatingChange }: NotificationRowProps) {
           <StarRating
             rating={item.rating}
             onRatingChange={handleRatingChange}
-            eventId={item.eventId}
           />
         ) : null}
         

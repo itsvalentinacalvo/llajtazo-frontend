@@ -12,7 +12,7 @@ import { Image } from "expo-image";
 import { Octicons, FontAwesome6 } from "@expo/vector-icons";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { Colors, Spacing, BorderRadius, Shadows } from "@/src/core/constants/theme";
-import { MapEvent, CATEGORY_CONFIG } from "../constants/mapEvents";
+import { MapEvent } from "../constants/mapEvents";
 
 const CARD_WIDTH_RATIO = 0.92;
 const CARD_HEIGHT = 110;

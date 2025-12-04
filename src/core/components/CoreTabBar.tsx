@@ -57,7 +57,6 @@ function AnimatedTabItem({
 }: AnimatedTabItemProps) {
   const { theme } = useTheme();
   const animationProgress = useSharedValue(isFocused ? 1 : 0);
-  const direction = currentIndex > previousIndex ? 1 : -1;
   const translateDirection = index >= currentIndex ? 1 : -1;
 
   const tabConfig = TAB_CONFIG.find((t) => t.name === route.name);

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet, FlatList, useWindowDimensions } from "react-native";
 import { useHomeHeader } from "@/src/core/components/HomeHeaderContext";
 import { EventCardSmall } from "@/src/core/components/EventCardSmall";
@@ -280,7 +280,7 @@ const GRID_GAP = Spacing.md;
 const HORIZONTAL_PADDING = Spacing.xl;
 
 export default function EventosScreen() {
-  const { headerHeight, selectedCategory, setSelectedCategory } = useHomeHeader();
+  const { headerHeight } = useHomeHeader();
   const { theme } = useTheme();
   const { paddingBottom } = useScreenInsets();
   const { width: screenWidth } = useWindowDimensions();

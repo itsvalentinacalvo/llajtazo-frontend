@@ -18,8 +18,7 @@ export default function MapaScreen() {
   const { theme } = useTheme();
   const mapRef = useRef<MapContainerRef>(null);
   const isFocused = useIsFocused();
-  // headerHeight provided by navigator's CoreHeader via HomeHeaderContext
-  const { headerHeight, selectedCategory, setSelectedCategory } = useHomeHeader();
+  const { selectedCategory } = useHomeHeader();
   const [savedEvents, setSavedEvents] = useState<Set<string>>(
     new Set(MAP_EVENTS.filter((e) => e.isSaved).map((e) => e.id))
   );
@@ -36,32 +35,6 @@ export default function MapaScreen() {
   );
 
   console.debug("[Home][MapaScreen] render", { selectedEventId: selectedEvent?.id });
-
-  // headerHeight now comes from HomeHeaderContext, header layout is handled by navigator
-
-  const handleCategoryPress = useCallback((category: string) => {
-    const newCategory =
-      selectedCategory?.toLowerCase() === category.toLowerCase() ? undefined : category;
-    setSelectedCategory(newCategory);
-
-    const newFilteredEvents = newCategory
-      ? MAP_EVENTS.filter((e) => {
-          const config = CATEGORY_CONFIG[e.category];
-          return config.label.toLowerCase() === newCategory.toLowerCase();
-        })
-      : MAP_EVENTS;
-
-    if (newFilteredEvents.length > 0) {
-      const firstEvent = {
-        ...newFilteredEvents[0],
-        isSaved: savedEvents.has(newFilteredEvents[0].id),
-      };
-      setSelectedEvent(firstEvent);
-      mapRef.current?.animateToEvent(firstEvent);
-    } else {
-      setSelectedEvent(null);
-    }
-  }, [savedEvents, selectedCategory, setSelectedCategory]);
 
   const handleEventChange = useCallback((event: MapEvent) => {
     setSelectedEvent(event);
