@@ -14,13 +14,14 @@ interface Interest {
   isHidden?: boolean;
 }
 
-const interests: Interest[] = [
+export const interests: Interest[] = [
   { id: "teatro", label: "Teatro" },
   { id: "conciertos", label: "Conciertos" },
   { id: "musica", label: "Música" },
   { id: "baile", label: "Baile" },
   { id: "comedia", label: "Comedia" },
   { id: "arte", label: "Arte", isSpecial: true },
+  { id: "cultura", label: "Cultura" },
   { id: "cine", label: "Cine" },
   { id: "literatura", label: "Literatura" },
   { id: "festivales", label: "Festivales" },

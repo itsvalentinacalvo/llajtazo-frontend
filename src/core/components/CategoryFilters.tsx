@@ -3,11 +3,35 @@ import { StyleSheet, ScrollView, Pressable, View, ImageSourcePropType } from "re
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { ThemedText } from "@/src/core/components/ThemedText";
-import { Spacing, Shadows } from "@/src/core/constants/theme";
+import { Spacing, Shadows, CategoryPillColors } from "@/src/core/constants/theme";
+import { TEST_DATABASE } from "@/src/core/test/testDatabase";
 
 type IconLibrary = "feather" | "material" | "ionicons" | "fontawesome" | "image";
 
+type CategoryIconConfig = {
+  icon: string;
+  iconLibrary: IconLibrary;
+};
+
+const DEFAULT_CATEGORY_ICON: CategoryIconConfig = {
+  icon: "tag",
+  iconLibrary: "feather",
+};
+
+const CATEGORY_ICON_MAP: Partial<Record<string, CategoryIconConfig>> = {
+  Musica: { icon: "music", iconLibrary: "feather" },
+  Cultura: { icon: "book-open", iconLibrary: "feather" },
+  Ferias: { icon: "shopping-bag", iconLibrary: "feather" },
+  Arte: { icon: "image", iconLibrary: "feather" },
+  Danza: { icon: "activity", iconLibrary: "feather" },
+};
+
+function getCategoryIcon(label: string): CategoryIconConfig {
+  return CATEGORY_ICON_MAP[label] ?? DEFAULT_CATEGORY_ICON;
+}
+
 export interface Category {
+  id?: number;
   label: string;
   icon: string | ImageSourcePropType;
   iconLibrary: IconLibrary;
@@ -75,12 +99,16 @@ interface CategoryFiltersProps {
   onCategoryPress?: (label: string) => void;
 }
 
-const DEFAULT_CATEGORIES: Category[] = [
-  { label: "Cultura", icon: require("@/src/core/assets/sombrero-cholita.png"), iconLibrary: "image", color: "#FF6B6B" },
-  { label: "Música", icon: "music", iconLibrary: "material", color: "#FFA85C" },
-  { label: "Ferias", icon: "bag", iconLibrary: "ionicons", color: "#5DD9A4" },
-  { label: "Arte", icon: "paint-brush", iconLibrary: "fontawesome", color: "#9B59B6" },
-];
+const DEFAULT_CATEGORIES: Category[] = TEST_DATABASE.categorias.map((category, index) => {
+  const iconConfig = getCategoryIcon(category.nombre);
+  return {
+    id: category.id,
+    label: category.nombre,
+    icon: iconConfig.icon,
+    iconLibrary: iconConfig.iconLibrary,
+    color: CategoryPillColors[index % CategoryPillColors.length],
+  };
+});
 
 export function CategoryFilters({
   categories = DEFAULT_CATEGORIES,
