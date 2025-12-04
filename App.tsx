@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import ErrorBoundary from "@/src/core/components/ErrorBoundary";
 import RootNavigator from "@/src/core/navigation/RootNavigator";
+import { UserProvider } from "@/src/core/context/UserContext";
 
 export default function App() {
   return (
@@ -14,7 +15,9 @@ export default function App() {
         <GestureHandlerRootView style={styles.root}>
           <KeyboardProvider>
             <NavigationContainer>
-              <RootNavigator />
+              <UserProvider>
+                <RootNavigator />
+              </UserProvider>
             </NavigationContainer>
             <StatusBar style="light" />
           </KeyboardProvider>

@@ -3,3 +3,9 @@ export const TEST_CREDENTIALS = {
   password: "Pass123",
   verificationCode: "1234",
 };
+
+// Additional test user for assistant role
+export const ASSISTANT_CREDENTIALS = {
+  email: "user",
+  password: "12345678",
+};

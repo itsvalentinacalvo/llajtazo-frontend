@@ -13,7 +13,7 @@ interface Interest {
   isHidden?: boolean;
 }
 
-const interests: Interest[] = [
+export const interests: Interest[] = [
   { id: "teatro", label: "Teatro" },
   { id: "conciertos", label: "Conciertos" },
   { id: "musica", label: "Música" },
@@ -43,11 +43,10 @@ const interests: Interest[] = [
 
 const initialSelected: string[] = [];
 
-export default function InterestsScreen({ navigation, onAuthSuccess }: any) {
+export default function InterestsScreen({ navigation, onAuthSuccess, initialSelected, onDone }: any) {
   const insets = useSafeAreaInsets();
-
   const [selectedInterests, setSelectedInterests] =
-    useState<string[]>(initialSelected);
+    useState<string[]>(initialSelected || initialSelected === undefined ? initialSelected || [] : []);
   const [error, setError] = useState<string | undefined>(undefined);
   const [shake, setShake] = useState(false);
 
@@ -73,6 +72,11 @@ export default function InterestsScreen({ navigation, onAuthSuccess }: any) {
     }
 
     setError(undefined);
+    if (onDone) {
+      onDone(selectedInterests);
+      return;
+    }
+
     if (onAuthSuccess) {
       onAuthSuccess();
     } else {

@@ -11,7 +11,8 @@ import SocialButton from "@/src/modules/auth/components/SocialButton";
 import Divider from "@/src/modules/auth/components/Divider";
 import { ScreenKeyboardAwareScrollView } from "@/src/core/components/ScreenKeyboardAwareScrollView";
 import { Colors, Spacing, Typography } from "@/src/core/constants/theme";
-import { TEST_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
+import { TEST_CREDENTIALS, ASSISTANT_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
+import { useUser } from "@/src/core/context/UserContext";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
@@ -32,6 +33,8 @@ export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => v
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [shakeFields, setShakeFields] = useState<{ [key: string]: boolean }>({});
+
+  const { setUser, setAccounts, setActiveAccountId, setRole } = useUser();
 
   const triggerShake = useCallback((fields: string[]) => {
     const shakeState: { [key: string]: boolean } = {};
@@ -57,10 +60,11 @@ export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => v
     }
 
     if (!newErrors.email && !newErrors.password) {
-      const emailMatches = email.toLowerCase() === TEST_CREDENTIALS.email.toLowerCase();
-      const passwordMatches = password === TEST_CREDENTIALS.password;
+      // Check organizer credentials
+      const isOrganizer = email.toLowerCase() === TEST_CREDENTIALS.email.toLowerCase() && password === TEST_CREDENTIALS.password;
+      const isAssistant = email.toLowerCase() === ASSISTANT_CREDENTIALS.email.toLowerCase() && password === ASSISTANT_CREDENTIALS.password;
 
-      if (!emailMatches || !passwordMatches) {
+      if (!isOrganizer && !isAssistant) {
         newErrors.general = "Correo o contraseña incorrectos";
         fieldsToShake.push("email", "password");
       }
@@ -76,6 +80,34 @@ export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => v
 
   const handleLogin = () => {
     if (validateForm()) {
+      // Determine role and initialize context accounts accordingly
+      const isOrganizer = email.toLowerCase() === TEST_CREDENTIALS.email.toLowerCase() && password === TEST_CREDENTIALS.password;
+      const isAssistant = email.toLowerCase() === ASSISTANT_CREDENTIALS.email.toLowerCase() && password === ASSISTANT_CREDENTIALS.password;
+
+      if (isOrganizer) {
+        // Organizer: show both accounts but do NOT show organize event option
+        const splash = require("@/src/core/assets/splash-icon.png");
+        const profilePhoto = require("@/src/modules/home/assets/ProfilePhoto.png");
+        const accounts = [
+          { id: "1", name: "Joe Doe", avatar: profilePhoto, isSelected: true },
+          { id: "2", name: "Llajtazo Events", avatar: splash, isSelected: false },
+        ];
+        setAccounts(accounts as any);
+        setActiveAccountId("1");
+        setUser({ name: "Joe Doe" });
+        setRole("organizer");
+      } else if (isAssistant) {
+        // Assistant: show only Joe Doe profile and show organize event option
+        const profilePhoto = require("@/src/modules/home/assets/ProfilePhoto.png");
+        const accounts = [
+          { id: "1", name: "Joe Doe", avatar: profilePhoto, isSelected: true },
+        ];
+        setAccounts(accounts as any);
+        setActiveAccountId("1");
+        setUser({ name: "Joe Doe" });
+        setRole("assistant");
+      }
+
       if (onAuthSuccess) {
         onAuthSuccess();
       } else {

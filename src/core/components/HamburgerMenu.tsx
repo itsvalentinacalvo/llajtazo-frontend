@@ -4,6 +4,7 @@ import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { Feather } from "@expo/vector-icons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTheme } from "@/src/core/hooks/useTheme";
+import { useUser } from "@/src/core/context/UserContext";
 import { Typography, Spacing } from "@/src/core/constants/theme";
 
 interface MenuItem {
@@ -15,6 +16,8 @@ interface MenuItem {
 
 export function CustomDrawerContent(props: any) {
   const { theme } = useTheme();
+  const { user, accounts, activeAccountId } = useUser();
+  const displayName = user?.name || "";
 
   const menuItems: MenuItem[] = [
     {
@@ -57,14 +60,23 @@ export function CustomDrawerContent(props: any) {
     >
       <View style={styles.container}>
         {/* Profile Section */}
-        <View style={styles.profileSection}>
-          <Image
-            source={{ uri: "https://i.pravatar.cc/150?img=12" }}
-            style={styles.profileImage}
-          />
-          <Text style={[styles.profileName, { color: theme.text }]}>
-            Joe Doe
-          </Text>
+        <View style={[styles.profileSection, { paddingBottom: Spacing.xl }] }>
+          <View style={styles.profileColumn}>
+            <Image
+              source={
+                (() => {
+                  const sel = accounts.find((a) => a.id === activeAccountId) || accounts[0];
+                  if (sel && sel.avatar) return typeof sel.avatar === 'string' ? { uri: sel.avatar } : sel.avatar as any;
+                  return { uri: "https://i.pravatar.cc/150?img=12" };
+                })()
+              }
+              style={styles.profileImage}
+            />
+
+            <Text style={[styles.profileNameColumn, { color: theme.text }]} numberOfLines={2}>
+              {displayName}
+            </Text>
+          </View>
         </View>
 
         {/* Menu Items */}
@@ -128,6 +140,8 @@ export function CustomDrawerContent(props: any) {
   );
 }
 
+// NameRenderer removed; using absolute-positioned Text for full single-line rendering
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -136,9 +150,16 @@ const styles = StyleSheet.create({
   profileSection: {
     alignItems: "flex-start",
     paddingHorizontal: Spacing.lg,
+    // Add extra bottom padding because the profile name is rendered
+    // absolutely (so it no longer contributes to the container height).
     paddingBottom: Spacing.xl,
+    position: 'relative',
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0, 0, 0, 0.05)",
+  },
+  profileAvatarAndName: {
+    alignItems: "center",
+    overflow: 'visible',
   },
   profileImage: {
     width: 60,
@@ -149,6 +170,26 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 18,
     fontWeight: "600",
+    flexShrink: 0,
+  },
+  profileNameRow: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginLeft: Spacing.md,
+    flexShrink: 1,
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileColumn: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  profileNameColumn: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: Spacing.sm,
   },
   menuSection: {
     paddingTop: Spacing.lg,
