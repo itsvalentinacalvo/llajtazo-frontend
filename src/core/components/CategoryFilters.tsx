@@ -3,11 +3,67 @@ import { StyleSheet, ScrollView, Pressable, View, ImageSourcePropType } from "re
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { ThemedText } from "@/src/core/components/ThemedText";
-import { Spacing, Shadows } from "@/src/core/constants/theme";
+import { Spacing, Shadows, CategoryPillColors } from "@/src/core/constants/theme";
+import { TEST_DATABASE } from "@/src/core/test/testDatabase";
 
 type IconLibrary = "feather" | "material" | "ionicons" | "fontawesome" | "image";
 
+type CategoryConfig = {
+  icon: string | ImageSourcePropType;
+  iconLibrary: IconLibrary;
+  color?: string;
+};
+
+const DEFAULT_CATEGORY_CONFIG: CategoryConfig = {
+  icon: "tag",
+  iconLibrary: "feather",
+};
+
+const CATEGORY_CONFIG_MAP: Record<string, CategoryConfig> = {
+  cultura: {
+    color: "#FF6B6B",
+    icon: require("@/src/core/assets/sombrero-cholita.png"),
+    iconLibrary: "image",
+  },
+  musica: {
+    color: "#FFA85C",
+    icon: "music",
+    iconLibrary: "material",
+  },
+  ferias: {
+    color: "#5DD9A4",
+    icon: "bag",
+    iconLibrary: "ionicons",
+  },
+  arte: {
+    color: "#9B59B6",
+    icon: "paint-brush",
+    iconLibrary: "fontawesome",
+  },
+  danza: {
+    icon: "shoe-ballet",
+    iconLibrary: "material",
+  },
+};
+
+function getCategoryConfig(label: string, index: number) {
+  const normalizedLabel = label
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const config = CATEGORY_CONFIG_MAP[normalizedLabel] ?? DEFAULT_CATEGORY_CONFIG;
+  const color = config.color ?? CategoryPillColors[index % CategoryPillColors.length];
+
+  return {
+    icon: config.icon,
+    iconLibrary: config.iconLibrary,
+    color,
+  };
+}
+
 export interface Category {
+  id?: number;
   label: string;
   icon: string | ImageSourcePropType;
   iconLibrary: IconLibrary;
@@ -75,12 +131,16 @@ interface CategoryFiltersProps {
   onCategoryPress?: (label: string) => void;
 }
 
-const DEFAULT_CATEGORIES: Category[] = [
-  { label: "Cultura", icon: require("@/src/core/assets/sombrero-cholita.png"), iconLibrary: "image", color: "#FF6B6B" },
-  { label: "Música", icon: "music", iconLibrary: "material", color: "#FFA85C" },
-  { label: "Ferias", icon: "bag", iconLibrary: "ionicons", color: "#5DD9A4" },
-  { label: "Arte", icon: "paint-brush", iconLibrary: "fontawesome", color: "#9B59B6" },
-];
+const DEFAULT_CATEGORIES: Category[] = TEST_DATABASE.categorias.map((category, index) => {
+  const { icon, iconLibrary, color } = getCategoryConfig(category.nombre, index);
+  return {
+    id: category.id,
+    label: category.nombre,
+    icon,
+    iconLibrary,
+    color,
+  };
+});
 
 export function CategoryFilters({
   categories = DEFAULT_CATEGORIES,

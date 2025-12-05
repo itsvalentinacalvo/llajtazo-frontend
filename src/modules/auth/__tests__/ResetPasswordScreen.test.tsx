@@ -1,7 +1,7 @@
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import ResetPasswordScreen from "@/src/modules/auth/screens/ResetPasswordScreen";
-import { TEST_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
+import { TEST_CREDENTIALS } from "@/src/core/test/profileData";
 
 describe("ResetPasswordScreen", () => {
   beforeEach(() => {

@@ -13,6 +13,7 @@ export function ThemedText({
   ...rest
 }: ThemedTextProps) {
   const { theme } = useTheme();
+  console.debug("[Core][ThemedText] render", { type });
 
   const getColor = () => {
     if (type === "link") {

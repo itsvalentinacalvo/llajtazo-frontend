@@ -47,15 +47,8 @@ describe("InterestsScreen", () => {
       
       fireEvent.press(getByText("Teatro"));
       fireEvent.press(getByText("FINALIZAR"));
-
       await waitFor(() => {
-        expect(navigationMock.dispatch).toHaveBeenCalledWith({
-          type: "RESET",
-          payload: {
-            index: 0,
-            routes: [{ name: "MainApp", params: { screen: "ExplorarTab" } }],
-          },
-        });
+        expect(navigationMock.navigate).toHaveBeenCalledWith("MainApp", { screen: "ExplorarTab" });
       });
     });
 
@@ -66,15 +59,8 @@ describe("InterestsScreen", () => {
       fireEvent.press(getByText("Música"));
       fireEvent.press(getByText("Deportes"));
       fireEvent.press(getByText("FINALIZAR"));
-
       await waitFor(() => {
-        expect(navigationMock.dispatch).toHaveBeenCalledWith({
-          type: "RESET",
-          payload: {
-            index: 0,
-            routes: [{ name: "MainApp", params: { screen: "ExplorarTab" } }],
-          },
-        });
+        expect(navigationMock.navigate).toHaveBeenCalledWith("MainApp", { screen: "ExplorarTab" });
       });
     });
   });

@@ -1,0 +1,68 @@
+Resumen general
+
+Este documento explica, en palabras sencillas, cómo está organizado y cómo funciona internamente la aplicación ahora mismo. No es técnico: piensa en esto como una guía para entender qué hace cada parte y cómo se conectan entre sí.
+
+Cómo arranca la aplicación
+- `index.ts` / `App.tsx`: son la puerta de entrada. Imagina que estos son los encargados de prender la app: cargan la configuración inicial y muestran la primera pantalla.
+- `SplashScreen`: pantalla inicial que aparece mientras la app prepara todo (carga recursos, verifica si el usuario ya está identificado, etc.).
+
+Navegación (cómo se mueve la app entre pantallas)
+- `RootNavigator`: decide qué camino seguir según si el usuario está identificado o no. Es como un guardia en la entrada: si no estás logueado te manda al módulo de autenticación, si ya lo estás te lleva al área principal.
+- `AuthStackNavigator`: conjunto de pantallas para hacer login, registro, verificación y reset de contraseña. Piensa en ello como el camino que recorres cuando creas o recuperas tu cuenta.
+- `MainTabNavigator` / `HomeTabNavigator` / `BurgerDrawerNavigator`: son los menús y pestañas de la parte principal de la app (explorar, eventos, mapa, perfil, y el menú lateral). Permiten ir de una sección importante a otra.
+
+Módulos principales
+- `core/`: aquí están las piezas que se usan por toda la app. Son como las herramientas comunes: botones, tarjetas, cabeceras, y cosas que mantienen el aspecto consistente.
+  - `components/`:
+    - `Button.tsx`: un botón reutilizable. Cuando ves un botón en la app, es muy probable que venga de aquí.
+    - `CardBase.tsx`, `EventCard.tsx`, `EventCardSmall.tsx`: plantillas para mostrar información en forma de tarjeta (por ejemplo, un evento con título, fecha y foto).
+    - `SearchBar.tsx`: barra para buscar eventos o lugares.
+    - `CoreHeader.tsx`, `CoreTabBar.tsx`, `TopBarHamburgerMenu&Notif.tsx`: los encabezados y barras de navegación que ves en la parte superior o inferior.
+    - `ThemedText.tsx`, `ThemedView.tsx`: versiones ‘inteligentes’ de textos y contenedores que cambian según el tema (claro/oscuro).
+  - `constants/theme.ts`: define colores y tamaños para que toda la app se vea coherente.
+  - `hooks/`:
+    - `useTheme.ts`, `useColorScheme.ts`: pequeñas funciones que “preguntan” cuál es el tema activo (por ejemplo, si el usuario prefiere modo oscuro) y lo aplican.
+  - `navigation/`: navegadores globales como `RootNavigator` y `BurgerDrawerNavigator`.
+
+- `modules/auth/`: todo lo relacionado con cuentas y acceso.
+  - `screens/`: pantallas donde el usuario escribe su correo, código, o crea su cuenta:
+    - `LoginScreen.tsx`, `RegisterScreen.tsx`, `ResetPasswordScreen.tsx`, `VerificationScreen.tsx`, `InterestsScreen.tsx`.
+  - `components/`: piezas específicas para estas pantallas:
+    - `AuthInput.tsx`: campo para escribir correo o contraseña.
+    - `CodeInput.tsx`: entrada para el código de verificación.
+    - `PrimaryButton.tsx`, `SocialButton.tsx`: botones con estilos propios del flujo de autenticación.
+  - `__tests__/`: pruebas automáticas que verifican que las pantallas funcionan como se espera (útil para los desarrolladores).
+
+- `modules/home/`: lo que ves después de entrar a la app.
+  - `screens/`:
+    - `ExplorarScreen.tsx`: pantalla principal para buscar o navegar por eventos.
+    - `EventosScreen.tsx`: lista más enfocada de eventos.
+    - `MapaScreen.tsx`: muestra eventos en un mapa.
+    - `PerfilScreen.tsx`: datos del usuario y opciones personales.
+  - `components/`:
+    - `MapContainer` (varios archivos): gestiona el mapa. Hay una versión para web y una para móviles.
+    - `MapEventsCards.tsx`, `SponsoredEventCard.tsx`, `SponsoredBanner.tsx`: muestran eventos destacados y publicidad patrocinada.
+  - `constants/mapEvents.ts`: ejemplos o datos de eventos que se muestran en el mapa.
+
+Componentes comunes (qué hacen en palabras sencillas)
+- `EventCard`: muestra la información esencial de un evento (imagen, nombre, fecha). Ejemplo: cuando ves un evento en la lista, esa tarjeta te resume lo más importante.
+- `InviteCard`: tarjeta que invita a compartir o a unirse a algo.
+- `HamburgerMenu`: el icono de tres líneas que abre el menú lateral.
+- `ScreenFlatList`, `ScreenScrollView`, `ScreenKeyboardAwareScrollView`: ayudan a mostrar listas o contenido desplazable y a manejar el teclado cuando escribes (por ejemplo, en un formulario).
+
+Hooks y temas (explicación simple)
+- Los `hooks` son pequeños ayudantes que guardan decisiones, por ejemplo: ¿la app está en modo oscuro? `useColorScheme` se encarga de eso. `useTheme` devuelve colores y estilos listos para usar. Gracias a ellos, los botones y textos cambian color automáticamente.
+
+Archivos de recursos
+- `assets/`: guarda imágenes, iconos y cosas visuales. Cada módulo puede tener su propia carpeta `assets`.
+
+Cómo fluye una acción típica (ejemplos)
+- Flujo de inicio (login): el usuario abre la app → `SplashScreen` aparece → `RootNavigator` revisa si el usuario ya está logueado → si no, muestra `AuthStackNavigator` → el usuario escribe su correo en `AuthInput` y pulsa `PrimaryButton` → al confirmar, la app guarda el estado y navega a la parte principal (`MainTabNavigator`).
+- Ver un evento en el mapa: vas a `MapaScreen` → `MapContainer` carga el mapa y los puntos (usando datos en `mapEvents.ts` o desde un servidor) → tocas una tarjeta (`MapEventsCards`) y la app te muestra más detalles del evento.
+
+Notas sobre pruebas y calidad
+- Dentro de `modules/auth/__tests__/` hay pruebas que comprueban que las pantallas clave del login y registro funcionan. No necesitas entender cómo están escritas para leer este documento, pero sirven para que los desarrolladores no rompan funcionalidades al cambiar código.
+
+Resumen / Idea principal
+- La app está organizada en piezas reutilizables: componentes comunes en `core`, funcionalidades por tema en `modules` (como `auth` y `home`), y navegadores que conectan todo.
+- Piensa en cada carpeta como una caja con herramientas: `core` tiene herramientas generales, `modules/auth` tiene las herramientas para iniciar sesión y crear cuentas, `modules/home` tiene las herramientas para explorar eventos y usar el mapa.

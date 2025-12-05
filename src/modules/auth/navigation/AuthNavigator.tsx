@@ -12,26 +12,39 @@ export type AuthStackParamList = {
   ResetPassword: undefined;
   Verification: { email: string };
   Interests: undefined;
-  MainApp: {
-    screen: string;
-    params?: Record<string, unknown>;
-  };
 };
 
 const Stack = createNativeStackNavigator<AuthStackParamList, "AuthStack">();
 
-export default function AuthStackNavigator() {
+export default function AuthStackNavigator({
+  onAuthSuccess,
+  initialRouteName = "Register",
+}: {
+  onAuthSuccess?: () => void;
+  initialRouteName?: "Login" | "Register" | "ResetPassword" | "Verification" | "Interests";
+}) {
   return (
     <Stack.Navigator
       id="AuthStack"
-      initialRouteName="Register"
+      initialRouteName={initialRouteName}
       screenOptions={{ headerShown: false }}
     >
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen
+        name="Login"
+        options={{ gestureEnabled: false }}
+      >
+        {(props) => <LoginScreen {...props} onAuthSuccess={onAuthSuccess} />}
+      </Stack.Screen>
+      <Stack.Screen
+        name="Register"
+        component={RegisterScreen}
+        options={{ gestureEnabled: false }}
+      />
       <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       <Stack.Screen name="Verification" component={VerificationScreen} />
-      <Stack.Screen name="Interests" component={InterestsScreen} />
+      <Stack.Screen name="Interests">
+        {(props) => <InterestsScreen {...props} onAuthSuccess={onAuthSuccess} />}
+      </Stack.Screen>
     </Stack.Navigator>
   );
 }

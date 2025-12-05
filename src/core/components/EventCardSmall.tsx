@@ -37,6 +37,7 @@ export function EventCardSmall({
 }: EventCardSmallProps) {
   const { theme } = useTheme();
   const imageHeight = cardWidth * IMAGE_HEIGHT_RATIO;
+  console.debug("[Core][EventCardSmall] render", { title });
 
   return (
     <Pressable

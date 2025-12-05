@@ -3,20 +3,22 @@
 global.mockNavigate = jest.fn();
 global.mockGoBack = jest.fn();
 global.mockDispatch = jest.fn();
+global.mockReplace = jest.fn();
 
 // Route mock for screens that receive params
 global.mockRoute = { params: {} };
 
-// Navigation
+// Navigation: single mock providing navigation helpers and CommonActions
 jest.mock("@react-navigation/native", () => ({
   useNavigation: () => ({
     navigate: global.mockNavigate,
     goBack: global.mockGoBack,
-    dispatch: global.mockDispatch,
+    dispatch: (...args) => global.mockDispatch(...args),
+    replace: (...args) => global.mockReplace(...args),
   }),
   useRoute: () => global.mockRoute,
   CommonActions: {
-    reset: (config) => ({ type: "RESET", payload: config }),
+    reset: (payload) => ({ type: "RESET", payload }),
   },
 }));
 

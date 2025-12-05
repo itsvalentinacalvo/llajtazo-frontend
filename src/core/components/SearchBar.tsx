@@ -28,13 +28,19 @@ export function SearchBar({
             placeholder={placeholder}
             placeholderTextColor="rgba(255, 255, 255, 0.7)"
             style={styles.input}
-            onChangeText={onSearchChange}
+            onChangeText={(text) => {
+              console.debug("[Core][SearchBar] onSearchChange", text);
+              onSearchChange && onSearchChange(text);
+            }}
           />
         </View>
       </View>
 
       <Pressable
-        onPress={onFilterPress}
+        onPress={() => {
+          console.debug("[Core][SearchBar] filter pressed");
+          onFilterPress && onFilterPress();
+        }}
         style={({ pressed }) => [
           styles.filterButton,
           pressed && styles.pressed,

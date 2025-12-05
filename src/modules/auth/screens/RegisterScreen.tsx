@@ -4,14 +4,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { AuthStackParamList } from "@/src/modules/auth/navigation/AuthStackNavigator";
+import { AuthStackParamList } from "@/src/modules/auth/navigation/AuthNavigator";
 import AuthInput from "@/src/modules/auth/components/AuthInput";
 import PrimaryButton from "@/src/modules/auth/components/PrimaryButton";
 import SocialButton from "@/src/modules/auth/components/SocialButton";
 import Divider from "@/src/modules/auth/components/Divider";
 import { ScreenKeyboardAwareScrollView } from "@/src/core/components/ScreenKeyboardAwareScrollView";
 import { Colors, Spacing, Typography } from "@/src/core/constants/theme";
-import { TEST_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
+import { TEST_CREDENTIALS } from "@/src/core/test/profileData";
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
@@ -49,12 +49,6 @@ export default function RegisterScreen() {
     if (pwd.length < 8) {
       return "Debe tener un mínimo de 8 caracteres";
     }
-    if (!/[A-Z]/.test(pwd)) {
-      return "Debe contener al menos una mayúscula";
-    }
-    if (!/[0-9]/.test(pwd)) {
-      return "Debe contener al menos un número";
-    }
     return undefined;
   };
 
@@ -91,20 +85,23 @@ export default function RegisterScreen() {
 
   const handleRegister = () => {
     if (validateForm()) {
+      console.log("[Register] Validation passed -> navigating to Verification with email=", email);
       navigation.navigate("Verification", { email });
     }
   };
 
   const handleGoogleRegister = () => {
-    console.log("Google register pressed");
+    console.log("[Register] Google register pressed");
   };
 
   const handleFacebookRegister = () => {
-    console.log("Facebook register pressed");
+    console.log("[Register] Facebook register pressed");
   };
 
   const handleNavigateToLogin = () => {
-    navigation.navigate("Login");
+    console.log("[Register] Navigate to Login pressed (replace)");
+    // replace so user cannot go back with swipe/hardware back
+    navigation.replace("Login");
   };
 
   const clearError = (field: keyof FormErrors) => {

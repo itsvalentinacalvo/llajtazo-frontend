@@ -6,9 +6,9 @@ import { BorderRadius, Spacing } from "@/src/core/constants/theme";
 import { TopBar } from "./TopBarHamburgerMenu&Notif";
 import { SearchBar } from "./SearchBar";
 import { CategoryFilters } from "./CategoryFilters";
+import { useNavigation, CommonActions } from "@react-navigation/native";
 
 interface CoreHeaderProps {
-  onNotificationPress?: () => void;
   onSearchChange?: (text: string) => void;
   onFilterPress?: () => void;
   onCategoryPress?: (label: string) => void;
@@ -19,8 +19,7 @@ interface CoreHeaderProps {
 const CATEGORY_PILL_HEIGHT = 42;
 const CATEGORY_OVERLAP = CATEGORY_PILL_HEIGHT / 2;
 
-export function CoreHeader({
-  onNotificationPress,
+function CoreHeaderImpl({
   onSearchChange,
   onFilterPress,
   onCategoryPress,
@@ -28,6 +27,15 @@ export function CoreHeader({
   onLayout,
 }: CoreHeaderProps) {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+
+  const handleNotificationPress = () => {
+    navigation.dispatch(
+      CommonActions.navigate({
+        name: "Notifications",
+      })
+    );
+  };
 
   return (
     <View style={styles.wrapper} onLayout={onLayout} pointerEvents="box-none">
@@ -37,7 +45,7 @@ export function CoreHeader({
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <TopBar onNotificationPress={onNotificationPress} />
+        <TopBar onNotificationPress={handleNotificationPress} />
         <SearchBar
           onSearchChange={onSearchChange}
           onFilterPress={onFilterPress}
@@ -68,3 +76,7 @@ const styles = StyleSheet.create({
     marginTop: -CATEGORY_OVERLAP,
   },
 });
+
+export const CoreHeader = React.memo(CoreHeaderImpl);
+
+export default CoreHeader;

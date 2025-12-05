@@ -3,23 +3,29 @@ import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { enableScreens } from "react-native-screens";
 import { StatusBar } from "expo-status-bar";
 import ErrorBoundary from "@/src/core/components/ErrorBoundary";
 import RootNavigator from "@/src/core/navigation/RootNavigator";
+import { navigationRef } from "@/src/core/navigation/navigationRef";
+import { ProfileProvider } from "@/src/core/context/ProfileContext";
 
 export default function App() {
+  enableScreens();
   return (
     <ErrorBoundary>
-      <SafeAreaProvider>
-        <GestureHandlerRootView style={styles.root}>
-          <KeyboardProvider>
-            <NavigationContainer>
-              <RootNavigator />
-            </NavigationContainer>
-            <StatusBar style="light" />
-          </KeyboardProvider>
-        </GestureHandlerRootView>
-      </SafeAreaProvider>
+      <ProfileProvider>
+        <SafeAreaProvider>
+          <GestureHandlerRootView style={styles.root}>
+            <KeyboardProvider>
+              <NavigationContainer ref={navigationRef}>
+                <RootNavigator />
+              </NavigationContainer>
+              <StatusBar style="auto" />
+            </KeyboardProvider>
+          </GestureHandlerRootView>
+        </SafeAreaProvider>
+      </ProfileProvider>
     </ErrorBoundary>
   );
 }

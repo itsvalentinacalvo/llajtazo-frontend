@@ -23,6 +23,7 @@ export function ScreenKeyboardAwareScrollView({
    * KeyboardAwareScrollView isn't compatible with web (it relies on native APIs), so the code falls back to ScreenScrollView on web to avoid runtime errors.
    */
   if (Platform.OS === "web") {
+    console.debug("[Core][ScreenKeyboardAwareScrollView] render (web fallback)");
     return (
       <ScreenScrollView
         style={style}

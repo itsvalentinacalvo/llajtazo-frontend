@@ -30,6 +30,15 @@ export const Colors = {
   },
 };
 
+export const CategoryPillColors = [
+  "#ee544a",
+  "#ff8d5d",
+  "#29d697",
+  "#6b7aed",
+  "#39d1f2",
+  "#7d67ee",
+] as const;
+
 export const Spacing = {
   xs: 4,
   sm: 8,

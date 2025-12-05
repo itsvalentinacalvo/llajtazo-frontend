@@ -1,7 +1,7 @@
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import VerificationScreen from "@/src/modules/auth/screens/VerificationScreen";
-import { TEST_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
+import { TEST_CREDENTIALS } from "@/src/core/test/profileData";
 
 describe("VerificationScreen", () => {
   beforeEach(() => {

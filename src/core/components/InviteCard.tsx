@@ -10,6 +10,7 @@ interface InviteCardProps {
 
 export function InviteCard({ onPress }: InviteCardProps) {
   const { theme } = useTheme();
+  console.debug("[Core][InviteCard] render");
 
   return (
     <View style={[styles.container, { backgroundColor: "#D4F1F9" }]}>
@@ -19,7 +20,10 @@ export function InviteCard({ onPress }: InviteCardProps) {
           Obtén 20 pts para tu próximo Ticket!
         </ThemedText>
         <Pressable
-          onPress={onPress}
+          onPress={() => {
+            console.debug("[Core][InviteCard] press");
+            onPress && onPress();
+          }}
           style={({ pressed }) => [
             styles.button,
             { backgroundColor: theme.primary },

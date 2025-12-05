@@ -1,7 +1,7 @@
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import LoginScreen from "@/src/modules/auth/screens/LoginScreen";
-import { TEST_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
+import { TEST_CREDENTIALS } from "@/src/core/test/profileData";
 
 describe("LoginScreen", () => {
   beforeEach(() => {
@@ -23,7 +23,7 @@ describe("LoginScreen", () => {
   it("permite navegar a Register", () => {
     const { getByText } = render(<LoginScreen />);
     fireEvent.press(getByText("Regístrate"));
-    expect((global as any).mockNavigate).toHaveBeenCalledWith("Register");
+    expect((global as any).mockReplace).toHaveBeenCalledWith("Register");
   });
 
   describe("Validación de campos vacíos", () => {
@@ -106,7 +106,7 @@ describe("LoginScreen", () => {
           type: "RESET",
           payload: {
             index: 0,
-            routes: [{ name: "MainApp", params: { screen: "EventosTab" } }],
+            routes: [{ name: "MainApp", params: { screen: "ExplorarTab" } }],
           },
         });
       });
@@ -152,8 +152,8 @@ describe("LoginScreen", () => {
     fireEvent.press(getByText("Continuar con Google"));
     fireEvent.press(getByText("Continuar con Facebook"));
 
-    expect(consoleSpy).toHaveBeenCalledWith("Google login pressed");
-    expect(consoleSpy).toHaveBeenCalledWith("Facebook login pressed");
+    expect(consoleSpy).toHaveBeenCalledWith("[Login] Google login pressed");
+    expect(consoleSpy).toHaveBeenCalledWith("[Login] Facebook login pressed");
 
     consoleSpy.mockRestore();
   });

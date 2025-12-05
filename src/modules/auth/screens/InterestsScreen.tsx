@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
-import { View, StyleSheet, Pressable, Text } from "react-native";
+import { View, StyleSheet, Pressable, Text, Dimensions } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS, Easing } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CommonActions } from "@react-navigation/native";
 
 import { ScreenScrollView } from "@/src/core/components/ScreenScrollView";
 import { ThemedText } from "@/src/core/components/ThemedText";
@@ -14,13 +14,14 @@ interface Interest {
   isHidden?: boolean;
 }
 
-const interests: Interest[] = [
+export const interests: Interest[] = [
   { id: "teatro", label: "Teatro" },
   { id: "conciertos", label: "Conciertos" },
   { id: "musica", label: "Música" },
   { id: "baile", label: "Baile" },
   { id: "comedia", label: "Comedia" },
   { id: "arte", label: "Arte", isSpecial: true },
+  { id: "cultura", label: "Cultura" },
   { id: "cine", label: "Cine" },
   { id: "literatura", label: "Literatura" },
   { id: "festivales", label: "Festivales" },
@@ -44,8 +45,13 @@ const interests: Interest[] = [
 
 const initialSelected: string[] = [];
 
-export default function InterestsScreen({ navigation }: any) {
+export default function InterestsScreen({ navigation, onAuthSuccess }: any) {
   const insets = useSafeAreaInsets();
+  const windowHeight = Dimensions.get("window").height;
+  const translateY = useSharedValue(0);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
 
   const [selectedInterests, setSelectedInterests] =
     useState<string[]>(initialSelected);
@@ -74,21 +80,34 @@ export default function InterestsScreen({ navigation }: any) {
     }
 
     setError(undefined);
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [
-          {
-            name: "MainApp",
-            params: { screen: "ExplorarTab" },
-          },
-        ],
-      })
-    );
+    const finalize = () => {
+      if (onAuthSuccess) {
+        onAuthSuccess();
+
+        // Reset parent navigator to Home so the app switches to the Home flow
+        try {
+          const parent = (navigation as any).getParent && (navigation as any).getParent();
+          parent && parent.reset && parent.reset({ index: 0, routes: [{ name: "Home" }] });
+        } catch (e) {
+          console.warn("[Interests] failed to reset parent to Home:", e);
+        }
+      } else {
+        navigation.navigate("MainApp", {
+          screen: "ExplorarTab",
+        });
+      }
+    };
+
+    // perform swipe-down animation then finalize
+    console.debug("[Interests] starting swipe-down animation");
+    translateY.value = withTiming(windowHeight, { duration: 450, easing: Easing.out(Easing.cubic) }, (finished) => {
+      if (finished) runOnJS(finalize)();
+    });
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: "#FFFFFF" }]}>
+    <View style={[styles.container, { backgroundColor: "#FFFFFF" }]}> 
+      <Animated.View style={[animatedStyle, { flex: 1 }]}> 
       <ScreenScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <ThemedText style={styles.title}>Selecciona</ThemedText>
@@ -142,6 +161,7 @@ export default function InterestsScreen({ navigation }: any) {
 
         <View style={{ height: insets.bottom + Spacing.xl }} />
       </ScreenScrollView>
+      </Animated.View>
     </View>
   );
 }

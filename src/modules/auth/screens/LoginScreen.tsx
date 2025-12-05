@@ -1,17 +1,18 @@
 import { useState, useCallback } from "react";
-import { View, Text, StyleSheet, Pressable, Switch } from "react-native";
+import { View, Text, StyleSheet, Pressable, Switch, Dimensions } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS, Easing } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { AuthStackParamList } from "@/src/modules/auth/navigation/AuthStackNavigator";
+import { AuthStackParamList } from "@/src/modules/auth/navigation/AuthNavigator";
 import AuthInput from "@/src/modules/auth/components/AuthInput";
 import PrimaryButton from "@/src/modules/auth/components/PrimaryButton";
 import SocialButton from "@/src/modules/auth/components/SocialButton";
 import Divider from "@/src/modules/auth/components/Divider";
 import { ScreenKeyboardAwareScrollView } from "@/src/core/components/ScreenKeyboardAwareScrollView";
 import { Colors, Spacing, Typography } from "@/src/core/constants/theme";
-import { TEST_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
+import { TEST_CREDENTIALS } from "@/src/core/test/profileData";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
@@ -24,9 +25,14 @@ interface FormErrors {
   general?: string;
 }
 
-export default function LoginScreen() {
+export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => void }) {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const insets = useSafeAreaInsets();
+  const windowHeight = Dimensions.get("window").height;
+  const translateY = useSharedValue(0);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -67,6 +73,9 @@ export default function LoginScreen() {
     }
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      console.log("[Login] Validation failed:", newErrors);
+    }
     if (fieldsToShake.length > 0) {
       triggerShake(fieldsToShake);
     }
@@ -75,35 +84,59 @@ export default function LoginScreen() {
   };
 
   const handleLogin = () => {
+    console.log("[Login] Pressed. email=", email, "rememberMe=", rememberMe);
     if (validateForm()) {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [
-            {
-              name: "MainApp",
-              params: { screen: "EventosTab" },
-            },
-          ],
-        })
-      );
+      console.log("[Login] Validation passed");
+      // animate swipe down programmatically then navigate
+      const finalize = () => {
+        if (onAuthSuccess) {
+          console.log("[Login] animation complete -> calling onAuthSuccess");
+          onAuthSuccess();
+
+          // Also attempt to reset the parent navigator to Home to ensure flow switches
+          try {
+            const parent = (navigation as any).getParent && (navigation as any).getParent();
+            parent && parent.reset && parent.reset({ index: 0, routes: [{ name: "Home" }] });
+          } catch (e) {
+            console.warn("[Login] failed to reset parent to Home:", e);
+          }
+        } else {
+          console.log("[Login] animation complete -> dispatching reset to MainApp->ExplorarTab");
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{ name: "MainApp", params: { screen: "ExplorarTab" } }],
+            })
+          );
+        }
+      };
+
+      console.debug("[Login] starting swipe-down animation");
+      translateY.value = withTiming(windowHeight, { duration: 450, easing: Easing.out(Easing.cubic) }, (finished) => {
+        if (finished) runOnJS(finalize)();
+      });
+    } else {
+      console.log("[Login] Not navigating because validation failed");
     }
   };
 
   const handleGoogleLogin = () => {
-    console.log("Google login pressed");
+    console.log("[Login] Google login pressed");
   };
 
   const handleFacebookLogin = () => {
-    console.log("Facebook login pressed");
+    console.log("[Login] Facebook login pressed");
   };
 
   const handleForgotPassword = () => {
+    console.log("[Login] Forgot password pressed -> navigating to ResetPassword");
     navigation.navigate("ResetPassword");
   };
 
   const handleNavigateToRegister = () => {
-    navigation.navigate("Register");
+    console.log("[Login] Navigate to Register pressed (replace)");
+    // replace so user cannot go back with swipe/hardware back
+    navigation.replace("Register");
   };
 
   const clearError = (field: keyof FormErrors) => {
@@ -119,6 +152,7 @@ export default function LoginScreen() {
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
     >
+      <Animated.View style={[{ flex: 1 }, animatedStyle]}>
       <ScreenKeyboardAwareScrollView
         contentContainerStyle={[
           styles.contentContainer,
@@ -204,6 +238,7 @@ export default function LoginScreen() {
           </View>
         </View>
       </ScreenKeyboardAwareScrollView>
+      </Animated.View>
     </LinearGradient>
   );
 }

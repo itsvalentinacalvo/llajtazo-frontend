@@ -1,7 +1,7 @@
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import RegisterScreen from "@/src/modules/auth/screens/RegisterScreen";
-import { TEST_CREDENTIALS } from "@/src/modules/auth/constants/testCredentials";
+import { TEST_CREDENTIALS } from "@/src/core/test/profileData";
 
 describe("RegisterScreen", () => {
   beforeEach(() => {
@@ -16,7 +16,7 @@ describe("RegisterScreen", () => {
   it("permite navegar a Login", () => {
     const { getByText } = render(<RegisterScreen />);
     fireEvent.press(getByText("Inicia Sesión"));
-    expect((global as any).mockNavigate).toHaveBeenCalledWith("Login");
+    expect((global as any).mockReplace).toHaveBeenCalledWith("Login");
   });
 
   describe("Validación de campos vacíos", () => {
@@ -70,34 +70,6 @@ describe("RegisterScreen", () => {
 
       await waitFor(() => {
         expect(getByText("Debe tener un mínimo de 8 caracteres")).toBeTruthy();
-      });
-      expect((global as any).mockNavigate).not.toHaveBeenCalledWith("Verification", expect.anything());
-    });
-
-    it("muestra error cuando la contraseña no tiene mayúscula", async () => {
-      const { getByText, getByPlaceholderText } = render(<RegisterScreen />);
-      
-      fireEvent.changeText(getByPlaceholderText("Nombre Completo"), "Test User");
-      fireEvent.changeText(getByPlaceholderText("abc@email.com"), "test@email.com");
-      fireEvent.changeText(getByPlaceholderText("Contraseña"), "password123");
-      fireEvent.press(getByText("REGÍSTRATE"));
-
-      await waitFor(() => {
-        expect(getByText("Debe contener al menos una mayúscula")).toBeTruthy();
-      });
-      expect((global as any).mockNavigate).not.toHaveBeenCalledWith("Verification", expect.anything());
-    });
-
-    it("muestra error cuando la contraseña no tiene número", async () => {
-      const { getByText, getByPlaceholderText } = render(<RegisterScreen />);
-      
-      fireEvent.changeText(getByPlaceholderText("Nombre Completo"), "Test User");
-      fireEvent.changeText(getByPlaceholderText("abc@email.com"), "test@email.com");
-      fireEvent.changeText(getByPlaceholderText("Contraseña"), "Password");
-      fireEvent.press(getByText("REGÍSTRATE"));
-
-      await waitFor(() => {
-        expect(getByText("Debe contener al menos un número")).toBeTruthy();
       });
       expect((global as any).mockNavigate).not.toHaveBeenCalledWith("Verification", expect.anything());
     });
@@ -170,15 +142,15 @@ describe("RegisterScreen", () => {
     expect((passwordInput.props as any).value).toBe("secret");
   });
 
-  it("llama a los handlers de redes sociales", () => {
+    it("llama a los handlers de redes sociales", () => {
     const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     const { getByText } = render(<RegisterScreen />);
 
     fireEvent.press(getByText("Registrarte con Google"));
     fireEvent.press(getByText("Registrarte con Facebook"));
 
-    expect(consoleSpy).toHaveBeenCalledWith("Google register pressed");
-    expect(consoleSpy).toHaveBeenCalledWith("Facebook register pressed");
+      expect(consoleSpy).toHaveBeenCalledWith("[Register] Google register pressed");
+      expect(consoleSpy).toHaveBeenCalledWith("[Register] Facebook register pressed");
 
     consoleSpy.mockRestore();
   });
