@@ -62,9 +62,7 @@ export default function PerfilScreen() {
   const nameInputRef = useRef<TextInput | null>(null);
   const [nameWidth, setNameWidth] = useState(0);
   const [bioText, setBioText] = useState<string>(profile.bio.slice(0, BIO_MAX_CHARS));
-  const [isBioEditing, setIsBioEditing] = useState(false);
   const bioInputRef = useRef<TextInput | null>(null);
-  const [isEditingInterests, setIsEditingInterests] = useState(false);
   const [profileInterests, setProfileInterests] = useState<string[]>(() => [...profile.interests]);
   
   const openBurgerMenu = useCallback(() => {
@@ -109,7 +107,6 @@ export default function PerfilScreen() {
   const handleEditProfile = () => {
     if (isEditing) {
       setIsNameEditing(false);
-      setIsBioEditing(false);
       setIsEditing(false);
       const trimmedBio = bioText.trim().slice(0, BIO_MAX_CHARS);
       setBioText(trimmedBio);
@@ -189,13 +186,13 @@ export default function PerfilScreen() {
     const ok = await ensurePermissions(false);
     if (!ok) return;
     try {
-      const result: any = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
         quality: 0.8,
         allowsEditing: true,
       });
-      const uri = result?.assets?.[0]?.uri ?? result?.uri;
-      if (!result.cancelled && uri) {
+      const uri = result?.assets?.[0]?.uri;
+      if (!result.canceled && uri) {
         setPendingAvatar(uri);
       }
     } catch (e) {
@@ -209,13 +206,13 @@ export default function PerfilScreen() {
     const ok = await ensurePermissions(true);
     if (!ok) return;
     try {
-      const result: any = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
         quality: 0.8,
         allowsEditing: true,
       });
-      const uri = result?.assets?.[0]?.uri ?? result?.uri;
-      if (!result.cancelled && uri) {
+      const uri = result?.assets?.[0]?.uri;
+      if (!result.canceled && uri) {
         setPendingAvatar(uri);
       }
     } catch (e) {
@@ -253,32 +250,6 @@ export default function PerfilScreen() {
       }))
     );
     setSwitchVisible(false);
-  };
-
-  const toggleEditingInterests = () => {
-    if (isEditingInterests) {
-      const newMap: Record<string, number> = {};
-      profileInterests.forEach((id, idx) => {
-        newMap[id] = idx % PILL_COLORS.length;
-      });
-      setSelectionColorMap(newMap);
-      nextColorIndexRef.current = profileInterests.length % PILL_COLORS.length;
-      freedColorsRef.current = [];
-      setIsEditingInterests(false);
-    } else {
-      setIsEditingInterests(true);
-      setTimeout(() => {
-        try {
-          scrollRef.current?.scrollToEnd({ animated: true });
-        } catch {
-        }
-      }, 150);
-    }
-  };
-
-  const startBioEditing = () => {
-    setIsBioEditing(true);
-    setTimeout(() => bioInputRef.current?.focus(), 100);
   };
 
   return (
@@ -399,33 +370,16 @@ export default function PerfilScreen() {
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeaderRow}>
             <ThemedText style={styles.sectionTitle}>
-              {isEditing ? "Biografía" : "Sobre Mi"}
+              Biografía
             </ThemedText>
-            {isEditing && !isBioEditing && (
-              <Pressable
-                onPress={startBioEditing}
-                style={styles.sectionEditButton}
-              >
-                <Feather name="edit-2" size={14} color={Colors.light.primary} />
-                <ThemedText style={styles.sectionEditText}>EDITAR</ThemedText>
-              </Pressable>
-            )}
-            {isBioEditing && (
-              <View style={styles.bioEditingHeader}>
-                <ThemedText style={styles.charCounter}>
-                  {bioText.length}/{BIO_MAX_CHARS}
-                </ThemedText>
-                <Pressable
-                  onPress={() => setIsBioEditing(false)}
-                  style={styles.doneBioButton}
-                >
-                  <ThemedText style={styles.sectionEditText}>LISTO</ThemedText>
-                </Pressable>
-              </View>
+            {isEditing && (
+              <ThemedText style={styles.charCounter}>
+                {bioText.length}/{BIO_MAX_CHARS}
+              </ThemedText>
             )}
           </View>
 
-          {isBioEditing ? (
+          {isEditing ? (
             <TextInput
               ref={bioInputRef}
               value={bioText}
@@ -441,7 +395,7 @@ export default function PerfilScreen() {
                 },
               ]}
               selectionColor={Colors.light.primary}
-              autoFocus
+              scrollEnabled={false}
             />
           ) : (
             <ExpandableText
@@ -461,25 +415,10 @@ export default function PerfilScreen() {
             <ThemedText style={styles.sectionTitle}>
               Intereses
             </ThemedText>
-            {isEditing ? (
-              <Pressable
-                style={styles.sectionEditButton}
-                onPress={toggleEditingInterests}
-              >
-                {isEditingInterests ? (
-                  <ThemedText style={styles.sectionEditText}>GUARDAR</ThemedText>
-                ) : (
-                  <>
-                    <Feather name="edit-2" size={14} color={Colors.light.primary} />
-                    <ThemedText style={styles.sectionEditText}>EDITAR</ThemedText>
-                  </>
-                )}
-              </Pressable>
-            ) : null}
           </View>
 
           <View style={styles.tagsContainer}>
-            {isEditingInterests
+            {isEditing
               ? AVAILABLE_INTERESTS.filter((i: any) => !i.isHidden).map((interest: any) => {
                   const isSelected = profileInterests.includes(interest.id);
                   const bgColor = isSelected ? Colors.light.primary : Colors.light.white;
@@ -712,31 +651,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: Colors.light.text,
   },
-  sectionEditButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.sm,
-  },
-  sectionEditText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: Colors.light.primary,
-    letterSpacing: 0.5,
-  },
-  bioEditingHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-  },
   charCounter: {
     fontSize: 12,
     color: Colors.light.textSecondary,
-  },
-  doneBioButton: {
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.sm,
   },
   bioText: {
     fontSize: 15,
@@ -751,7 +668,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     fontSize: 15,
     lineHeight: 22,
-    minHeight: 100,
   },
   tagsContainer: {
     flexDirection: "row",

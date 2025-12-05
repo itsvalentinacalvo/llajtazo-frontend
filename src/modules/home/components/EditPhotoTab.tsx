@@ -49,13 +49,17 @@ export const EditPhotoTab: React.FC<EditPhotoTabProps> = ({
   }, [visible, slideAnim]);
 
   const handleTakePhoto = () => {
-    onTakePhoto();
     onClose();
+    setTimeout(() => {
+      onTakePhoto();
+    }, 350);
   };
 
   const handlePickPhoto = () => {
-    onPickPhoto();
     onClose();
+    setTimeout(() => {
+      onPickPhoto();
+    }, 350);
   };
 
   return (
