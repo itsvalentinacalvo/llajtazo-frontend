@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { View, Dimensions, TouchableWithoutFeedback, StyleSheet, Text, Pressable, Image, ScrollView } from "react-native";
+import { View, Dimensions, TouchableWithoutFeedback, StyleSheet, Text, Pressable, Image, ScrollView, ImageSourcePropType } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from "react-native-reanimated";
 import { useNavigation } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
@@ -7,6 +7,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { Typography, Spacing } from "@/src/core/constants/theme";
 import { BURGER_MENU_PROFILE } from "@/src/core/test/profileData";
+import { useProfile } from "@/src/core/context/ProfileContext";
 
 export default function BurgerMenuScreen(props: any) {
   const navigation = useNavigation();
@@ -33,7 +34,6 @@ export default function BurgerMenuScreen(props: any) {
   }));
 
   const close = (afterClose?: () => void, skipGoBack: boolean = false) => {
-    // prevent double triggers
     if (closing.value === 1) return;
     closing.value = 1;
 
@@ -75,9 +75,18 @@ export default function BurgerMenuScreen(props: any) {
     }, 230);
   };
 
-  // Inline drawer content (merged from CustomDrawerContent)
   function InlineDrawerContent({ navigation, onClose }: any) {
     const { theme } = useTheme();
+    const { profile } = useProfile();
+
+    const resolveAvatarSource = (avatar: any): ImageSourcePropType | undefined => {
+      if (!avatar) return undefined;
+      return typeof avatar === "string"
+        ? { uri: avatar }
+        : (avatar as ImageSourcePropType);
+    };
+
+    const avatarSource = resolveAvatarSource(profile.avatar) ?? BURGER_MENU_PROFILE.avatar;
 
     const menuItems = [
       { icon: "ticket-outline", iconType: "ionicons", label: "Tus Tickets", route: "Tickets" },
@@ -106,11 +115,9 @@ export default function BurgerMenuScreen(props: any) {
     };
 
     const handleLogout = () => {
-      // Simplified logout: close drawer then call onAuthLogOut prop provided by RootNavigator
       console.log("Cerrar Sesión pressed -> calling onAuthLogOut prop");
       try {
         if (onClose) {
-          // pass skipGoBack = true to avoid calling navigation.goBack() while root resets
           onClose(() => {
             try {
               props && typeof props.onAuthLogOut === "function" && props.onAuthLogOut();
@@ -139,9 +146,9 @@ export default function BurgerMenuScreen(props: any) {
       <ScrollView style={{ backgroundColor: theme.backgroundRoot }} contentContainerStyle={{ paddingBottom: Spacing.xl }}>
         <View style={stylesInner.container}>
           <View style={stylesInner.profileSection}>
-            <Image source={BURGER_MENU_PROFILE.avatar} style={stylesInner.profileImage} />
-            <Text style={[stylesInner.profileName, { color: theme.text }]}>{BURGER_MENU_PROFILE.name}</Text>
-            <Text style={[stylesInner.profileEmail, { color: theme.textSecondary }]}>{BURGER_MENU_PROFILE.email}</Text>
+            <Image source={avatarSource} style={stylesInner.profileImage} />
+            <Text style={[stylesInner.profileName, { color: theme.text }]}>{profile.name}</Text>
+            <Text style={[stylesInner.profileEmail, { color: theme.textSecondary }]}>{profile.email}</Text>
           </View>
 
           <View style={stylesInner.menuSection}>

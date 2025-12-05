@@ -72,7 +72,7 @@ export const MAP_EVENTS: MapEvent[] = [
       latitude: -17.376840542371554,
       longitude: -66.14984506062555,
     },
-    isSaved: true,
+    isSaved: false,
   },
   {
     id: "2",

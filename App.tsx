@@ -8,23 +8,26 @@ import { StatusBar } from "expo-status-bar";
 import ErrorBoundary from "@/src/core/components/ErrorBoundary";
 import RootNavigator from "@/src/core/navigation/RootNavigator";
 import { navigationRef } from "@/src/core/navigation/navigationRef";
+import { ProfileProvider } from "@/src/core/context/ProfileContext";
 
 export default function App() {
   enableScreens();
   return (
     <ErrorBoundary>
-      <SafeAreaProvider>
-        <GestureHandlerRootView style={styles.root}>
-          <KeyboardProvider>
-            <NavigationContainer ref={navigationRef}>
-              <RootNavigator />
-            </NavigationContainer>
-            <StatusBar style="auto" />
-          </KeyboardProvider>
-        </GestureHandlerRootView>
-      </SafeAreaProvider>
+      <ProfileProvider>
+        <SafeAreaProvider>
+          <GestureHandlerRootView style={styles.root}>
+            <KeyboardProvider>
+              <NavigationContainer ref={navigationRef}>
+                <RootNavigator />
+              </NavigationContainer>
+              <StatusBar style="auto" />
+            </KeyboardProvider>
+          </GestureHandlerRootView>
+        </SafeAreaProvider>
+      </ProfileProvider>
     </ErrorBoundary>
-  ); 
+  );
 }
 
 const styles = StyleSheet.create({

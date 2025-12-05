@@ -1,7 +1,7 @@
 export const TEST_DATABASE = {
   categorias: [
-    { id: 1, nombre: "Musica" },
-    { id: 2, nombre: "Cultura" },
+    { id: 1, nombre: "Cultura" },
+    { id: 2, nombre: "Música" },
     { id: 3, nombre: "Ferias" },
     { id: 4, nombre: "Arte" },
     { id: 5, nombre: "Danza" },

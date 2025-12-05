@@ -8,26 +8,58 @@ import { TEST_DATABASE } from "@/src/core/test/testDatabase";
 
 type IconLibrary = "feather" | "material" | "ionicons" | "fontawesome" | "image";
 
-type CategoryIconConfig = {
-  icon: string;
+type CategoryConfig = {
+  icon: string | ImageSourcePropType;
   iconLibrary: IconLibrary;
+  color?: string;
 };
 
-const DEFAULT_CATEGORY_ICON: CategoryIconConfig = {
+const DEFAULT_CATEGORY_CONFIG: CategoryConfig = {
   icon: "tag",
   iconLibrary: "feather",
 };
 
-const CATEGORY_ICON_MAP: Partial<Record<string, CategoryIconConfig>> = {
-  Musica: { icon: "music", iconLibrary: "feather" },
-  Cultura: { icon: "book-open", iconLibrary: "feather" },
-  Ferias: { icon: "shopping-bag", iconLibrary: "feather" },
-  Arte: { icon: "image", iconLibrary: "feather" },
-  Danza: { icon: "activity", iconLibrary: "feather" },
+const CATEGORY_CONFIG_MAP: Record<string, CategoryConfig> = {
+  cultura: {
+    color: "#FF6B6B",
+    icon: require("@/src/core/assets/sombrero-cholita.png"),
+    iconLibrary: "image",
+  },
+  musica: {
+    color: "#FFA85C",
+    icon: "music",
+    iconLibrary: "material",
+  },
+  ferias: {
+    color: "#5DD9A4",
+    icon: "bag",
+    iconLibrary: "ionicons",
+  },
+  arte: {
+    color: "#9B59B6",
+    icon: "paint-brush",
+    iconLibrary: "fontawesome",
+  },
+  danza: {
+    icon: "shoe-ballet",
+    iconLibrary: "material",
+  },
 };
 
-function getCategoryIcon(label: string): CategoryIconConfig {
-  return CATEGORY_ICON_MAP[label] ?? DEFAULT_CATEGORY_ICON;
+function getCategoryConfig(label: string, index: number) {
+  const normalizedLabel = label
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const config = CATEGORY_CONFIG_MAP[normalizedLabel] ?? DEFAULT_CATEGORY_CONFIG;
+  const color = config.color ?? CategoryPillColors[index % CategoryPillColors.length];
+
+  return {
+    icon: config.icon,
+    iconLibrary: config.iconLibrary,
+    color,
+  };
 }
 
 export interface Category {
@@ -100,13 +132,13 @@ interface CategoryFiltersProps {
 }
 
 const DEFAULT_CATEGORIES: Category[] = TEST_DATABASE.categorias.map((category, index) => {
-  const iconConfig = getCategoryIcon(category.nombre);
+  const { icon, iconLibrary, color } = getCategoryConfig(category.nombre, index);
   return {
     id: category.id,
     label: category.nombre,
-    icon: iconConfig.icon,
-    iconLibrary: iconConfig.iconLibrary,
-    color: CategoryPillColors[index % CategoryPillColors.length],
+    icon,
+    iconLibrary,
+    color,
   };
 });
 

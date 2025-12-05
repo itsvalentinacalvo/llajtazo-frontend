@@ -31,10 +31,10 @@ export const Colors = {
 };
 
 export const CategoryPillColors = [
-  "#6b7aed",
   "#ee544a",
   "#ff8d5d",
   "#29d697",
+  "#6b7aed",
   "#39d1f2",
   "#7d67ee",
 ] as const;

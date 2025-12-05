@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import { Pressable, StyleSheet, type TextStyle } from "react-native";
+import { Pressable, StyleSheet, Text, type TextStyle } from "react-native";
 import { ThemedText, type ThemedTextProps } from "@/src/core/components/ThemedText";
+import { Colors } from "@/src/core/constants/theme";
 
 interface Props {
   text: string;
-  numberOfLines?: number;
+  maxChars?: number;
+  visibleChars?: number;
   type?: ThemedTextProps["type"];
   style?: TextStyle | TextStyle[];
   readMoreLabel?: string;
@@ -13,52 +15,50 @@ interface Props {
 
 export default function ExpandableText({
   text,
-  numberOfLines = 2,
+  maxChars = 200,
+  visibleChars = 150,
   type = "body",
   style,
-  readMoreLabel = "Leer más",
-  readLessLabel = "Leer menos",
+  readMoreLabel = "Ver mas",
+  readLessLabel = "Ver menos",
 }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const [showToggle, setShowToggle] = useState(false);
-  const [measured, setMeasured] = useState(false);
+  
+  const displayText = text.slice(0, maxChars);
+  const needsTruncation = displayText.length > visibleChars;
+  const truncatedText = displayText.slice(0, visibleChars);
+
+  if (!needsTruncation) {
+    return (
+      <ThemedText type={type} style={[styles.text, style]}>
+        {displayText}
+      </ThemedText>
+    );
+  }
 
   return (
     <>
-      <ThemedText
-        type={type}
-        style={[styles.text, style]}
-        numberOfLines={expanded ? undefined : measured ? numberOfLines : undefined}
-        onTextLayout={(e) => {
-          // Only measure once (first layout) without truncation so we can know total lines
-          if (!measured) {
-            if (e.nativeEvent.lines.length > numberOfLines) {
-              setShowToggle(true);
-            }
-            setMeasured(true);
-          }
-        }}
-      >
-        {text}
+      <ThemedText type={type} style={[styles.text, style]}>
+        {expanded ? displayText : truncatedText}
+        {!expanded ? "... " : " "}
+        <Text 
+          style={styles.link} 
+          onPress={() => setExpanded(!expanded)}
+        >
+          {expanded ? readLessLabel : readMoreLabel}
+        </Text>
       </ThemedText>
-
-      {showToggle && (
-        <Pressable onPress={() => setExpanded(!expanded)}>
-          <ThemedText type="link" style={styles.link}>
-            {expanded ? readLessLabel : readMoreLabel}
-          </ThemedText>
-        </Pressable>
-      )}
     </>
   );
 }
 
 const styles = StyleSheet.create({
   text: {
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 22,
   },
   link: {
-    marginTop: 4,
+    color: Colors.light.primary,
+    fontWeight: "500",
   },
 });

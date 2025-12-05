@@ -10,7 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, CommonActions } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import Entypo from '@expo/vector-icons/Entypo';
 import { ThemedText } from "@/src/core/components/ThemedText";
@@ -21,30 +21,30 @@ import ExpandableText from "@/src/modules/home/components/ExpandableText";
 import { ShareTab } from '@/src/core/components/ShareTab';
 import { EditPhotoTab } from '@/src//modules/home/components/EditPhotoTab';
 import * as ImagePicker from 'expo-image-picker';
-import { SwitchAccountTab, AccountProfile } from '@/src/core/components/SwitchAccountTab';
-import { useHomeHeader } from "@/src/core/components/HomeHeaderContext";
+import { SwitchAccountTab, AccountProfile } from '@/src/modules/home/components/SwitchAccountTab';
 import { interests as AVAILABLE_INTERESTS } from "@/src/modules/auth/screens/InterestsScreen";
-import { ScreenKeyboardAwareScrollView } from "@/src/core/components/ScreenKeyboardAwareScrollView";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { useProfile } from "@/src/core/context/ProfileContext";
 import {
   PROFILE_ACCOUNTS,
   PROFILE_BUSINESS_LINK,
-  PROFILE_SCREEN_DETAILS,
   PROFILE_DEFAULT_AVATAR,
 } from "@/src/core/test/profileData";
 
 const PILL_COLORS = CategoryPillColors;
+const TOP_NAV_HEIGHT = 50;
+const AVATAR_SIZE = 120;
+const AVATAR_BORDER_WIDTH = 3;
+const BIO_MAX_CHARS = 200;
+const BIO_VISIBLE_CHARS = 150;
+const TAB_BAR_HEIGHT = 88;
 
 export default function PerfilScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { headerHeight } = useHomeHeader();
-  const {
-    name: defaultProfileName,
-    bio: defaultProfileBio,
-    interests: defaultProfileInterests,
-    stats: profileStats,
-  } = PROFILE_SCREEN_DETAILS;
+  const { profile, updateName, updateBio, updateAvatar, updateInterests } = useProfile();
+  
   const { isLinked: isBusinessLinked, organizer: linkedOrganizer } = PROFILE_BUSINESS_LINK;
   const [accounts, setAccounts] = useState<AccountProfile[]>(() =>
     PROFILE_ACCOUNTS.map((account, index) => ({
@@ -57,40 +57,71 @@ export default function PerfilScreen() {
   );
   const resolvedActiveAccountId = activeAccountId ?? accounts[0]?.id ?? null;
   const [isEditing, setIsEditing] = useState(false);
-  const [username, setUsername] = useState<string>(defaultProfileName);
+  const [username, setUsername] = useState<string>(profile.name);
   const [isNameEditing, setIsNameEditing] = useState(false);
   const nameInputRef = useRef<TextInput | null>(null);
   const [nameWidth, setNameWidth] = useState(0);
-  const [bioText, setBioText] = useState<string>(defaultProfileBio);
+  const [bioText, setBioText] = useState<string>(profile.bio.slice(0, BIO_MAX_CHARS));
   const [isBioEditing, setIsBioEditing] = useState(false);
   const bioInputRef = useRef<TextInput | null>(null);
   const [isEditingInterests, setIsEditingInterests] = useState(false);
-  const [profileInterests, setProfileInterests] = useState<string[]>(() => [...defaultProfileInterests]);
+  const [profileInterests, setProfileInterests] = useState<string[]>(() => [...profile.interests]);
+  
+  const openBurgerMenu = useCallback(() => {
+    const nav: any = navigation;
+    try {
+      if (typeof nav?.navigate === "function") {
+        nav.navigate("BurgerMenu");
+        return;
+      }
+    } catch (err) {
+      console.debug("[Home][PerfilScreen] navigate BurgerMenu via navigate failed", err);
+    }
 
-  // Map selected interest id -> color index assigned when selected.
-  // This mapping stays stable while an interest remains selected so other
-  // selected pills don't change color when one is deselected.
+    try {
+      nav?.dispatch?.(
+        CommonActions.navigate({
+          name: "BurgerMenu",
+        })
+      );
+      return;
+    } catch (err) {
+      console.debug("[Home][PerfilScreen] navigate BurgerMenu via dispatch failed", err);
+    }
+
+    const parentNav: any = nav?.getParent?.();
+    if (typeof parentNav?.navigate === "function") {
+      parentNav.navigate("BurgerMenu");
+    }
+  }, [navigation]);
+
   const [selectionColorMap, setSelectionColorMap] = useState<Record<string, number>>(() => {
     const map: Record<string, number> = {};
-    defaultProfileInterests.forEach((id, i) => {
+    profile.interests.forEach((id, i) => {
       map[id] = i % PILL_COLORS.length;
     });
     return map;
   });
 
-  // Mutable refs for next color index and freed color indices (FIFO reuse).
   const nextColorIndexRef = useRef<number>(profileInterests.length % PILL_COLORS.length);
   const freedColorsRef = useRef<number[]>([]);
 
-
-
   const handleEditProfile = () => {
     if (isEditing) {
-      // Save flow: persist local state and close any field editors
       setIsNameEditing(false);
       setIsBioEditing(false);
       setIsEditing(false);
-      setBioText(bioText.trim());
+      const trimmedBio = bioText.trim().slice(0, BIO_MAX_CHARS);
+      setBioText(trimmedBio);
+      
+      updateName(username);
+      updateBio(trimmedBio);
+      updateInterests(profileInterests);
+      
+      if (pendingAvatar) {
+        updateAvatar({ uri: pendingAvatar } as ImageSourcePropType);
+      }
+      
       if (resolvedActiveAccountId) {
         setAccounts((prev) =>
           prev.map((account) => {
@@ -108,9 +139,14 @@ export default function PerfilScreen() {
           setPendingAvatar(null);
         }
       }
-      // TODO: call API to save profile
     } else {
       setIsEditing(true);
+    }
+  };
+
+  const handleBioChange = (text: string) => {
+    if (text.length <= BIO_MAX_CHARS) {
+      setBioText(text);
     }
   };
 
@@ -121,13 +157,9 @@ export default function PerfilScreen() {
   };
 
   const scrollRef = useRef<ScrollView | null>(null);
-  const handleScrollRef = useCallback((ref: ScrollView | null) => {
-    scrollRef.current = ref;
-  }, []);
   const [shareVisible, setShareVisible] = useState(false);
   const [switchVisible, setSwitchVisible] = useState(false);
   const [editPhotoVisible, setEditPhotoVisible] = useState(false);
-  // temporary selected avatar URI while editing; applied on Save
   const [pendingAvatar, setPendingAvatar] = useState<string | null>(null);
 
   const ensurePermissions = async (forCamera: boolean) => {
@@ -193,8 +225,6 @@ export default function PerfilScreen() {
     }
   };
 
-  // Account selection is kept locally so the screen reflects edits immediately.
-
   const selectedAccount =
     accounts.find((account) => account.id === resolvedActiveAccountId) ??
     accounts[0] ??
@@ -212,7 +242,7 @@ export default function PerfilScreen() {
     PROFILE_DEFAULT_AVATAR;
   const avatarSource: ImageSourcePropType = pendingAvatar
     ? { uri: pendingAvatar }
-    : resolveAvatarSource(selectedAccount?.avatar) ?? defaultAvatarSource;
+    : resolveAvatarSource(selectedAccount?.avatar) ?? profile.avatar ?? defaultAvatarSource;
 
   const handleSelectAccount = (accountId: string) => {
     setActiveAccountId(accountId);
@@ -227,7 +257,6 @@ export default function PerfilScreen() {
 
   const toggleEditingInterests = () => {
     if (isEditingInterests) {
-      // Exiting edit mode: assign colors in order to the currently selected interests
       const newMap: Record<string, number> = {};
       profileInterests.forEach((id, idx) => {
         newMap[id] = idx % PILL_COLORS.length;
@@ -237,60 +266,50 @@ export default function PerfilScreen() {
       freedColorsRef.current = [];
       setIsEditingInterests(false);
     } else {
-      // Entering edit mode: keep UI as-is, selected pills will show primary color while editing
       setIsEditingInterests(true);
-      // Scroll to bottom so all options are visible (delay to allow layout)
       setTimeout(() => {
         try {
           scrollRef.current?.scrollToEnd({ animated: true });
         } catch {
-          // ignore
         }
       }, 150);
     }
   };
 
-  
+  const startBioEditing = () => {
+    setIsBioEditing(true);
+    setTimeout(() => bioInputRef.current?.focus(), 100);
+  };
 
   return (
     <ThemedView style={styles.root}>
-      {/* Top Navigation Bar */}
       <View style={[styles.topNavBar, { top: insets.top }]}>
-        <Pressable style={styles.topNavButton} onPress={() => (navigation as any).openDrawer()}>
+        <Pressable style={styles.topNavButton} onPress={openBurgerMenu}>
           <Feather name="menu" size={24} color={theme.text} />
         </Pressable>
         <Pressable style={styles.topNavButton} onPress={() => setShareVisible(true)}>
-          <Feather name="share-2" size={24} color={theme.text} />
+          <Feather name="external-link" size={22} color={theme.text} />
         </Pressable>
       </View>
 
-      <ScreenKeyboardAwareScrollView
-        innerRef={handleScrollRef}
-        style={{ flex: 1 }}
-        contentContainerStyle={{
-          paddingTop: headerHeight + Spacing.sm,
-          paddingBottom: insets.bottom + Spacing.xl,
-          paddingHorizontal: Spacing.xl,
-        }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Avatar Section */}
+      <View style={[styles.fixedHeader, { paddingTop: insets.top + TOP_NAV_HEIGHT + Spacing.lg }]}>
         <View style={styles.avatarContainer}>
-          <Image
-            source={avatarSource}
-            style={styles.avatarImage}
-            resizeMode="cover"
-          />
-          {isEditing && (
-            <Pressable style={styles.profileImageOverlay} onPress={() => setEditPhotoVisible(true)}>
-              <Entypo name="camera" size={28} color="#FFFFFF" />
-            </Pressable>
-          )}
+          <View style={styles.avatarWrapper}>
+            <Image
+              source={avatarSource}
+              style={styles.avatarImage}
+              resizeMode="cover"
+            />
+            {isEditing && (
+              <Pressable style={styles.profileImageOverlay} onPress={() => setEditPhotoVisible(true)}>
+                <Entypo name="camera" size={32} color="#FFFFFF" />
+              </Pressable>
+            )}
+          </View>
         </View>
 
-        {/* User Info */}
         <View style={styles.userNameContainer}>
-          <View style={styles.userNameCenter}>
+          <View style={styles.userNameRow}>
             {isNameEditing ? (
               <TextInput
                 ref={nameInputRef}
@@ -305,150 +324,164 @@ export default function PerfilScreen() {
                 onLayout={(e) => setNameWidth(e.nativeEvent.layout.width)}
               />
             ) : (
-              <ThemedText type="h2" style={styles.userName} onLayout={(e) => setNameWidth(e.nativeEvent.layout.width)}>
-                {username}
-              </ThemedText>
-            )}
-          </View>
-
-          <View style={[
-            styles.nameIconWrapper,
-            { transform: [{ translateX: nameWidth / 2 + Spacing.xs }] },
-          ]} pointerEvents="box-none">
-            {isNameEditing ? null : isEditing ? (
-                <Pressable
-                  onPress={() => {
-                    setIsNameEditing(true);
-                    setTimeout(() => nameInputRef.current?.focus(), 50);
-                  }}
-                >
-                  <Feather name="edit-2" size={16} color={theme.textSecondary} />
-                </Pressable>
-            ) : (
-              <Pressable onPress={() => setSwitchVisible(true)} style={{ padding: Spacing.xs }}>
-                <Feather name="chevron-down" size={16} color={theme.textSecondary} style={styles.downIcon} />
-              </Pressable>
+              <>
+                <ThemedText type="h2" style={styles.userName} onLayout={(e) => setNameWidth(e.nativeEvent.layout.width)}>
+                  {username}
+                </ThemedText>
+                {isEditing ? (
+                  <Pressable
+                    onPress={() => {
+                      setIsNameEditing(true);
+                      setTimeout(() => nameInputRef.current?.focus(), 50);
+                    }}
+                    style={styles.nameEditIcon}
+                  >
+                    <Feather name="edit-2" size={14} color={theme.textSecondary} />
+                  </Pressable>
+                ) : (
+                  <Pressable onPress={() => setSwitchVisible(true)} style={styles.nameChevron}>
+                    <Feather name="chevron-down" size={18} color={theme.textSecondary} />
+                  </Pressable>
+                )}
+              </>
             )}
           </View>
         </View>
 
-        {/* Stats */}
         <View style={styles.statsContainer}>
-          <View style={[styles.statItem, styles.statItemLeft]}>
-            <ThemedText type="h4" style={styles.statNumber}>
-              {profileStats.following.toLocaleString("es-BO")}
+          <View style={styles.statItem}>
+            <ThemedText style={styles.statNumber}>
+              {profile.stats.following.toLocaleString("es-BO")}
             </ThemedText>
-            <ThemedText type="small" style={styles.statLabel}>
+            <ThemedText style={styles.statLabel}>
               Siguiendo
             </ThemedText>
           </View>
           <View style={styles.statDivider} />
-          <View style={[styles.statItem, styles.statItemRight]}>
-            <ThemedText type="h4" style={styles.statNumber}>
-              {profileStats.tickets.toLocaleString("es-BO")}
+          <View style={styles.statItem}>
+            <ThemedText style={styles.statNumber}>
+              {profile.stats.tickets.toLocaleString("es-BO")}
             </ThemedText>
-            <ThemedText type="small" style={styles.statLabel}>
+            <ThemedText style={styles.statLabel}>
               Tickets
             </ThemedText>
           </View>
         </View>
 
-        {/* Edit Profile Button */}
         <Pressable
           style={({ pressed }) => [
             isEditing ? styles.saveButton : styles.editButton,
-            pressed && (isEditing ? styles.saveButtonPressed : styles.editButtonPressed),
+            pressed && styles.buttonPressed,
           ]}
           onPress={handleEditProfile}
         >
-          {!isEditing && <Feather name="edit-2" size={18} color={Colors.light.primary} />}
+          {!isEditing && <Feather name="edit-2" size={16} color={Colors.light.primary} style={styles.editButtonIcon} />}
           <ThemedText
-            type="body"
-            style={isEditing ? styles.saveButtonText : [styles.editButtonText, { color: Colors.light.primary }]}
+            style={isEditing ? styles.saveButtonText : styles.editButtonText}
           >
             {isEditing ? "Guardar" : "Editar Perfil"}
           </ThemedText>
         </Pressable>
+      </View>
 
-        {/* Biografía Section */}
+      <KeyboardAwareScrollView
+        ref={scrollRef as any}
+        style={styles.scrollableContent}
+        contentContainerStyle={[
+          styles.scrollContentContainer,
+          { paddingBottom: TAB_BAR_HEIGHT + insets.bottom + Spacing.xl }
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid
+        extraScrollHeight={20}
+      >
         <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeaderRow}>
-              <ThemedText type="h4" style={styles.sectionTitle}>
-                Biografía
-              </ThemedText>
-              {isEditing && (
+          <View style={styles.sectionHeaderRow}>
+            <ThemedText style={styles.sectionTitle}>
+              {isEditing ? "Biografía" : "Sobre Mi"}
+            </ThemedText>
+            {isEditing && !isBioEditing && (
+              <Pressable
+                onPress={startBioEditing}
+                style={styles.sectionEditButton}
+              >
+                <Feather name="edit-2" size={14} color={Colors.light.primary} />
+                <ThemedText style={styles.sectionEditText}>EDITAR</ThemedText>
+              </Pressable>
+            )}
+            {isBioEditing && (
+              <View style={styles.bioEditingHeader}>
+                <ThemedText style={styles.charCounter}>
+                  {bioText.length}/{BIO_MAX_CHARS}
+                </ThemedText>
                 <Pressable
-                  onPress={() => {
-                    setIsBioEditing(true);
-                    setTimeout(() => bioInputRef.current?.focus(), 50);
-                  }}
-                  style={{ padding: Spacing.xs }}
+                  onPress={() => setIsBioEditing(false)}
+                  style={styles.doneBioButton}
                 >
-                  <Feather name="edit-2" size={16} color={theme.textSecondary} />
+                  <ThemedText style={styles.sectionEditText}>LISTO</ThemedText>
                 </Pressable>
-              )}
-            </View>
+              </View>
+            )}
+          </View>
 
           {isBioEditing ? (
             <TextInput
               ref={bioInputRef}
               value={bioText}
-              onChangeText={setBioText}
+              onChangeText={handleBioChange}
               multiline
+              maxLength={BIO_MAX_CHARS}
               style={[
                 styles.bioInput,
-                { color: theme.text, borderColor: Colors.light.inputBorder, backgroundColor: Colors.light.inputBackground },
+                { 
+                  color: theme.text, 
+                  borderColor: Colors.light.primary, 
+                  backgroundColor: Colors.light.inputBackground,
+                },
               ]}
-              selectionColor={theme.text}
-              returnKeyType="done"
+              selectionColor={Colors.light.primary}
+              autoFocus
             />
           ) : (
             <ExpandableText
               text={bioText}
-              numberOfLines={2}
+              maxChars={BIO_MAX_CHARS}
+              visibleChars={BIO_VISIBLE_CHARS}
               type="body"
-              style={[styles.bioText, { color: theme.textSecondary }]}
+              style={styles.bioText}
+              readMoreLabel="Ver mas"
+              readLessLabel="Ver menos"
             />
           )}
         </View>
 
-        {/* Intereses Section */}
         <View style={styles.sectionContainer}>
-          <View style={styles.interesesHeader}>
-            <ThemedText type="h4" style={styles.sectionTitle}>
+          <View style={styles.sectionHeaderRow}>
+            <ThemedText style={styles.sectionTitle}>
               Intereses
             </ThemedText>
-            <Pressable
-              style={({ pressed }) => [
-                styles.editInteresesButton,
-                pressed && styles.editInteresesButtonPressed,
-              ]}
-              onPress={toggleEditingInterests}
-            >
-              {isEditingInterests ? (
-                <ThemedText type="small" style={styles.saveInteresesText}>
-                  GUARDAR
-                </ThemedText>
-              ) : (
-                <>
-                  <Feather name="edit-2" size={14} color={Colors.light.primary} />
-                  <ThemedText
-                    type="small"
-                    style={[{ color: Colors.light.primary, marginLeft: 6, fontWeight: "600" }]}
-                  >
-                    EDITAR
-                  </ThemedText>
-                </>
-              )}
-            </Pressable>
+            {isEditing ? (
+              <Pressable
+                style={styles.sectionEditButton}
+                onPress={toggleEditingInterests}
+              >
+                {isEditingInterests ? (
+                  <ThemedText style={styles.sectionEditText}>GUARDAR</ThemedText>
+                ) : (
+                  <>
+                    <Feather name="edit-2" size={14} color={Colors.light.primary} />
+                    <ThemedText style={styles.sectionEditText}>EDITAR</ThemedText>
+                  </>
+                )}
+              </Pressable>
+            ) : null}
           </View>
 
-          {/* Interest Tags */}
-          <View style={[styles.tagsContainer, isEditingInterests ? styles.tagsContainerEditing : styles.tagsContainerDisplay]}>
+          <View style={styles.tagsContainer}>
             {isEditingInterests
               ? AVAILABLE_INTERESTS.filter((i: any) => !i.isHidden).map((interest: any) => {
                   const isSelected = profileInterests.includes(interest.id);
-                  // While editing: show selected pills as primary blue
                   const bgColor = isSelected ? Colors.light.primary : Colors.light.white;
                   const borderColor = isSelected ? Colors.light.primary : theme.textSecondary;
                   const textColor = isSelected ? Colors.light.white : theme.textSecondary;
@@ -461,12 +494,11 @@ export default function PerfilScreen() {
                         {
                           backgroundColor: bgColor,
                           borderColor,
-                          borderWidth: 2,
                           opacity: pressed ? 0.8 : 1,
                         },
                       ]}
                     >
-                      <ThemedText type="small" style={[styles.interestTagText, { color: textColor }]}>
+                      <ThemedText style={[styles.interestTagText, { color: textColor }]}>
                         {interest.label}
                       </ThemedText>
                     </Pressable>
@@ -481,11 +513,10 @@ export default function PerfilScreen() {
                       key={id}
                       style={[
                         styles.interestTag,
-                        styles.interestTagDisplay,
-                        { backgroundColor: pillColor, borderColor: pillColor, borderWidth: 2 },
+                        { backgroundColor: pillColor, borderColor: pillColor },
                       ]}
                     >
-                      <ThemedText type="small" style={[styles.interestTagText, { color: Colors.light.white }]}>
+                      <ThemedText style={styles.interestTagText}>
                         {info.label}
                       </ThemedText>
                     </View>
@@ -493,9 +524,7 @@ export default function PerfilScreen() {
                 })}
           </View>
         </View>
-
-        {/* Promotional section removed per request */}
-      </ScreenKeyboardAwareScrollView>
+      </KeyboardAwareScrollView>
 
       <ShareTab visible={shareVisible} onClose={() => setShareVisible(false)} />
       <SwitchAccountTab
@@ -524,7 +553,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    height: 50,
+    height: TOP_NAV_HEIGHT,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -534,291 +563,210 @@ const styles = StyleSheet.create({
   topNavButton: {
     padding: Spacing.sm,
   },
-  topNavIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: "contain",
-  },
-  userNameContainer: {
-    position: "relative",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 40,
-    marginBottom: Spacing.md,
-  },
-  userNameCenter: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  nameIconWrapper: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    left: '50%',
-  },
-  inlineRightIcon: {
-    width: 16,
-    height: 16,
-    resizeMode: "contain",
-  },
-  downIcon: {
-    width: 16,
-    height: 16,
-    resizeMode: "contain",
-    marginLeft: Spacing.xs,
-    transform: [{ translateY: -3 }],
-  },
-  headerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: Spacing.xl,
-    gap: Spacing.md,
-  },
-  backButton: {
-    padding: Spacing.sm,
-    marginLeft: -Spacing.sm,
-  },
-  headerTitle: {
-    textAlign: "left",
-  },
-  backIconImage: {
-    width: 24,
-    height: 24,
-    resizeMode: "contain",
+  fixedHeader: {
+    backgroundColor: Colors.light.white,
+    paddingHorizontal: Spacing.xl,
+    zIndex: 10,
   },
   avatarContainer: {
     alignItems: "center",
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
+  },
+  avatarWrapper: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    borderWidth: AVATAR_BORDER_WIDTH,
+    borderColor: Colors.light.border,
+    overflow: 'hidden',
     position: 'relative',
   },
   avatarImage: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: Colors.light.backgroundSecondary,
+    width: AVATAR_SIZE - AVATAR_BORDER_WIDTH * 2,
+    height: AVATAR_SIZE - AVATAR_BORDER_WIDTH * 2,
+    borderRadius: (AVATAR_SIZE - AVATAR_BORDER_WIDTH * 2) / 2,
   },
-
   profileImageOverlay: {
     position: 'absolute',
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: 'rgba(60,60,60,0.38)',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(60, 60, 60, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  userName: {
-    textAlign: "center",
+  userNameContainer: {
+    alignItems: "center",
     marginBottom: Spacing.md,
+  },
+  userNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userName: {
+    fontSize: 22,
+    fontWeight: "600",
   },
   nameInput: {
     textAlign: "center",
-    marginBottom: Spacing.md,
-    fontSize: Typography.h2.fontSize,
-    fontWeight: Typography.h2.fontWeight,
+    fontSize: 22,
+    fontWeight: "600",
     paddingVertical: 2,
     minWidth: 160,
+  },
+  nameEditIcon: {
+    marginLeft: Spacing.sm,
+    padding: Spacing.xs,
+  },
+  nameChevron: {
+    marginLeft: Spacing.xs,
+    padding: Spacing.xs,
   },
   statsContainer: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     marginBottom: Spacing.xl,
-    width: '100%',
   },
   statItem: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  statItemLeft: {
     alignItems: 'center',
-    paddingRight: 0,
-    marginRight: -75,
-  },
-  statItemRight: {
-    alignItems: 'center',
-    paddingLeft: 0,
-    marginLeft: -75,
+    paddingHorizontal: Spacing.xl,
   },
   statNumber: {
-    marginBottom: Spacing.xs,
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.light.text,
+    marginBottom: 2,
   },
   statLabel: {
+    fontSize: 13,
     color: Colors.light.textSecondary,
   },
   statDivider: {
     width: 1,
-    height: 32,
+    height: 36,
     backgroundColor: Colors.light.border,
-    position: 'absolute',
-    left: '50%',
-    transform: [{ translateX: -0.5 }],
   },
   editButton: {
     flexDirection: "row",
     borderWidth: 1.5,
     borderColor: Colors.light.primary,
-    borderRadius: BorderRadius.sm,
+    borderRadius: 10,
     paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
     alignItems: "center",
     justifyContent: "center",
-    gap: Spacing.sm,
-    marginBottom: Spacing.xl + 30,
-    width: 160,
+    marginBottom: Spacing.lg,
     alignSelf: "center",
-  },
-  editButtonPressed: {
-    opacity: 0.8,
-  },
-  editButtonText: {
-    fontWeight: "600",
-    fontSize: Typography.button.fontSize + 2,
+    minWidth: 160,
+    backgroundColor: "rgba(43, 187, 255, 0.08)",
   },
   editButtonIcon: {
-    width: 18,
-    height: 18,
-    resizeMode: "contain",
+    marginRight: Spacing.sm,
+  },
+  editButtonText: {
+    fontWeight: "500",
+    fontSize: 15,
+    color: Colors.light.primary,
   },
   saveButton: {
     flexDirection: "row",
-    borderRadius: BorderRadius.sm,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
+    borderRadius: 10,
+    paddingVertical: Spacing.md + 2,
+    paddingHorizontal: Spacing.xl + Spacing.lg,
     alignItems: "center",
     justifyContent: "center",
-    gap: Spacing.sm,
-    marginBottom: Spacing.xl + 30,
-    width: 160,
+    marginBottom: Spacing.lg,
     alignSelf: "center",
     backgroundColor: Colors.light.primary,
-    position: "relative",
-  },
-  saveButtonPressed: {
-    opacity: 0.9,
+    opacity: 0.85,
   },
   saveButtonText: {
     color: Colors.light.white,
     fontWeight: "600",
-    textAlign: "center",
-    fontSize: Typography.button.fontSize + 2,
+    fontSize: 15,
   },
-  saveButtonIcon: {
-    position: "absolute",
-    left: Spacing.md,
-    width: 18,
-    height: 18,
-    resizeMode: "contain",
+  buttonPressed: {
+    opacity: 0.7,
+  },
+  scrollableContent: {
+    flex: 1,
+  },
+  scrollContentContainer: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.md,
   },
   sectionContainer: {
     marginBottom: Spacing.xl,
   },
-  sectionTitle: {
-    marginBottom: Spacing.md,
-  },
   sectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: Spacing.md,
   },
-  tagsContainerDisplay: {
-    // Match bottom padding used in editing mode so pills aren't cut off
-    paddingBottom: Spacing.xl,
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: Colors.light.text,
+  },
+  sectionEditButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+  },
+  sectionEditText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.light.primary,
+    letterSpacing: 0.5,
+  },
+  bioEditingHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  charCounter: {
+    fontSize: 12,
+    color: Colors.light.textSecondary,
+  },
+  doneBioButton: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
   },
   bioText: {
-    fontSize: 16,
-    lineHeight: 18,
-    textAlign: "justify",
-    letterSpacing: -0.3,
+    fontSize: 15,
+    lineHeight: 22,
+    color: Colors.light.textSecondary,
+    textAlign: "left",
   },
   bioInput: {
-    borderWidth: 1,
-    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    borderRadius: BorderRadius.sm,
     padding: Spacing.md,
-    minHeight: 96,
     textAlignVertical: 'top',
-    fontSize: Typography.body.fontSize,
-    lineHeight: 20,
-  },
-  inlineEditIcon: {
-    width: 16,
-    height: 16,
-    resizeMode: "contain",
-    marginLeft: Spacing.xs,
-    transform: [{ translateY: -4 }],
-  },
-  bioTextCollapsed: {
-    marginBottom: Spacing.md,
-  },
-  readMoreLink: {
-    color: Colors.light.primary,
-    marginTop: 6,
-  },
-  interesesHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Spacing.sm,
-    marginTop: Spacing.md,
-  },
-  editIconButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-  },
-  editInteresesButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: 14,
-    backgroundColor: "rgba(43, 187, 255, 0.1)",
-    gap: 6,
-    marginTop: -Spacing.lg,
-  },
-  editInteresesButtonPressed: {
-    opacity: 0.7,
-  },
-  saveInteresesText: {
-    color: Colors.light.primary,
-    fontWeight: "600",
-    textAlign: "center",
+    fontSize: 15,
+    lineHeight: 22,
+    minHeight: 100,
   },
   tagsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: Spacing.sm,
-    alignItems: 'center',
-  },
-  tagsContainerEditing: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: Spacing.xl + 10,
   },
   interestTag: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: BorderRadius.xl,
-    marginBottom: Spacing.sm,
-    marginHorizontal: Spacing.sm -1,
-  },
-  interestTagDisplay: {
-    // Horizontal spacing used only when NOT editing
-    marginHorizontal: Spacing.xs,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 2,
   },
   interestTagText: {
     color: Colors.light.white,
-    fontWeight: "600",
-    textAlign: "center",
-    fontSize: Typography.body.fontSize,
+    fontWeight: "500",
+    fontSize: 13,
   },
-  // Promotional section removed
 });
