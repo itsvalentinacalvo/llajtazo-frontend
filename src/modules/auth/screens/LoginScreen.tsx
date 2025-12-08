@@ -13,6 +13,7 @@ import Divider from "@/src/modules/auth/components/Divider";
 import { ScreenKeyboardAwareScrollView } from "@/src/core/components/ScreenKeyboardAwareScrollView";
 import { Colors, Spacing, Typography } from "@/src/core/constants/theme";
 import { TEST_CREDENTIALS } from "@/src/core/test/profileData";
+import { useStatusBarStyle } from "@/src/core/context/StatusBarContext";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
@@ -38,6 +39,7 @@ export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => v
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [shakeFields, setShakeFields] = useState<{ [key: string]: boolean }>({});
+  useStatusBarStyle("light", "#2BBBFF");
 
   const triggerShake = useCallback((fields: string[]) => {
     const shakeState: { [key: string]: boolean } = {};

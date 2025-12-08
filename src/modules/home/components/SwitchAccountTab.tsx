@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import {
   Image,
   ImageSourcePropType,
 } from "react-native";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import Feather from "@expo/vector-icons/Feather";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import {
@@ -37,6 +36,7 @@ interface LinkedOrganizerInfo {
   followers: number;
   subscribed: boolean;
   logo: ImageSourcePropType;
+  isSelected?: boolean;
 }
 
 interface SwitchAccountTabProps {
@@ -54,12 +54,33 @@ export const SwitchAccountTab: React.FC<SwitchAccountTabProps> = ({
   onClose,
   accounts,
   onSelectAccount,
-  onOrganizeEvent,
+  onOrganizeEvent: _onOrganizeEvent,
   linkedOrganizer,
   showOrganizeEventCta = false,
 }) => {
   const { theme } = useTheme();
   const slideAnim = useRef(new Animated.Value(height)).current;
+  const derivedSelectedKey = (() => {
+    const selectedAccount = accounts.find((account) => account.isSelected);
+    if (selectedAccount) {
+      return `account-${selectedAccount.id}`;
+    }
+
+    if (linkedOrganizer?.isSelected) {
+      return `organizer-${linkedOrganizer.id}`;
+    }
+
+    return null;
+  })();
+  const derivedSelectedKeyRef = useRef(derivedSelectedKey);
+  const [selectedAccountKey, setSelectedAccountKey] = useState<string | null>(derivedSelectedKey);
+
+  useEffect(() => {
+    if (derivedSelectedKey !== derivedSelectedKeyRef.current) {
+      derivedSelectedKeyRef.current = derivedSelectedKey;
+      setSelectedAccountKey(derivedSelectedKey);
+    }
+  }, [derivedSelectedKey]);
 
   useEffect(() => {
     if (visible) {
@@ -77,15 +98,9 @@ export const SwitchAccountTab: React.FC<SwitchAccountTabProps> = ({
     }
   }, [visible, slideAnim]);
 
-  const handleSelectAccount = (accountId: string) => {
+  const handleSelectAccount = (accountId: string, source: "account" | "organizer") => {
+    setSelectedAccountKey(`${source}-${accountId}`);
     onSelectAccount(accountId);
-    onClose();
-  };
-
-  const handleOrganizeEvent = () => {
-    if (onOrganizeEvent) {
-      onOrganizeEvent();
-    }
     onClose();
   };
 
@@ -117,32 +132,53 @@ export const SwitchAccountTab: React.FC<SwitchAccountTabProps> = ({
           {accounts.map((account) => (
             <Pressable
               key={account.id}
+              onPress={() => handleSelectAccount(account.id, "account")}
               style={({ pressed }) => [
                 styles.accountRow,
+                {
+                  backgroundColor: selectedAccountKey === `account-${account.id}`
+                    ? theme.white
+                    : theme.backgroundSecondary,
+                  borderColor: selectedAccountKey === `account-${account.id}`
+                    ? Colors.light.primary
+                    : Colors.light.backgroundSecondary,
+                },
                 pressed && styles.accountRowPressed,
               ]}
-              onPress={() => handleSelectAccount(account.id)}
             >
-              <View style={styles.avatarContainer}>
-                {account.avatar ? (
-                  <Image
-                    source={typeof account.avatar === 'string' ? { uri: account.avatar } : account.avatar as any}
-                    style={styles.avatar}
-                  />
-                ) : (
-                  <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                    <Feather name="user" size={36} color={theme.textSecondary} />
-                  </View>
-                )}
+              <View style={styles.accountContent}>
+                <View style={styles.avatarWrapper}>
+                  {account.avatar ? (
+                    <Image
+                      source={
+                        typeof account.avatar === "string"
+                          ? { uri: account.avatar }
+                          : (account.avatar as any)
+                      }
+                      style={styles.avatar}
+                    />
+                  ) : (
+                    <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                      <Feather name="user" size={36} color={theme.textSecondary} />
+                    </View>
+                  )}
+                </View>
+
+                <Text style={[styles.accountName, { color: theme.text }]} numberOfLines={2}>
+                  {account.name}
+                </Text>
               </View>
-
-              <Text style={[styles.accountName, { color: theme.text }]}> 
-                {account.name}
-              </Text>
-
-              {account.isSelected ? (
-                <View style={styles.checkmarkContainer}>
-                  <Feather name="check" size={28} color={Colors.light.primary} />
+              {selectedAccountKey === `account-${account.id}` ? (
+                <View
+                  style={[
+                    styles.accountStatusCircle,
+                    {
+                      backgroundColor: Colors.light.primary,
+                      borderColor: Colors.light.primary,
+                    },
+                  ]}
+                >
+                  <Feather name="check" size={18} color={theme.white} />
                 </View>
               ) : null}
             </Pressable>
@@ -150,8 +186,20 @@ export const SwitchAccountTab: React.FC<SwitchAccountTabProps> = ({
         </View>
 
         {linkedOrganizer ? (
-          <View
-            style={[styles.organizerSection, { backgroundColor: theme.backgroundSecondary }]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.organizerSection,
+              {
+                backgroundColor: selectedAccountKey === `organizer-${linkedOrganizer.id}`
+                  ? theme.white
+                  : theme.backgroundSecondary,
+                borderColor: selectedAccountKey === `organizer-${linkedOrganizer.id}`
+                  ? Colors.light.primary
+                  : Colors.light.backgroundSecondary,
+              },
+              pressed && styles.organizerSectionPressed,
+            ]}
+            onPress={() => handleSelectAccount(String(linkedOrganizer.id), "organizer")}
           >
             <View style={styles.organizerHeader}>
               <Image source={linkedOrganizer.logo} style={styles.organizerLogo} />
@@ -166,10 +214,26 @@ export const SwitchAccountTab: React.FC<SwitchAccountTabProps> = ({
                   {linkedOrganizer.about}
                 </Text>
               </View>
+              {selectedAccountKey === `organizer-${linkedOrganizer.id}` ? (
+                <View style={styles.organizerStatusWrapper}>
+                  <View
+                    style={[
+                      styles.accountStatusCircle,
+                      {
+                        backgroundColor: Colors.light.primary,
+                        borderColor: Colors.light.primary,
+                      },
+                    ]}
+                  >
+                    <Feather name="check" size={18} color={theme.white} />
+                  </View>
+                </View>
+              ) : null}
             </View>
             <View style={styles.organizerMetaRow}>
               <Feather name="users" size={18} color={theme.textSecondary} />
-              <Text style={[styles.organizerMetaText, { color: theme.textSecondary }]}>
+              <Text style={[styles.organizerMetaText, { color: theme.textSecondary }]}
+              >
                 {linkedOrganizer.followers.toLocaleString("es-BO")} seguidores
               </Text>
               {linkedOrganizer.subscribed ? (
@@ -181,26 +245,14 @@ export const SwitchAccountTab: React.FC<SwitchAccountTabProps> = ({
                 </>
               ) : null}
             </View>
-          </View>
-        ) : showOrganizeEventCta ? (
-          <Pressable
-            style={({ pressed }) => [
-              styles.organizeEventRow,
-              pressed && styles.accountRowPressed,
-            ]}
-            onPress={handleOrganizeEvent}
-          >
-            <View style={styles.organizeIconContainer}>
-              <MaterialCommunityIcons
-                name="party-popper"
-                size={36}
-                color={theme.textSecondary}
-              />
-            </View>
-            <Text style={[styles.organizeText, { color: theme.text }]}> 
-              Organiza tu Evento
-            </Text>
           </Pressable>
+        ) : showOrganizeEventCta ? (
+          <View style={styles.organizeEventCard}>
+            <View style={styles.organizeIconContainer}>
+              <Image source={require("../assets/Confetti.png")} style={styles.organizeIconImage} />
+            </View>
+            <Text style={[styles.organizeText, { color: theme.text }]}>Organiza tu Evento</Text>
+          </View>
         ) : null}
       </Animated.View>
     </Modal>
@@ -242,20 +294,31 @@ const styles = StyleSheet.create({
   },
 
   accountsList: {
-    marginBottom: 0,
+    marginBottom: Spacing.xs - 20,
   },
 
   accountRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.md,
+    justifyContent: "space-between",
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
   },
 
   accountRowPressed: {
-    opacity: 0.7,
+    opacity: 0.85,
   },
 
-  avatarContainer: {
+  accountContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+
+  avatarWrapper: {
     marginRight: Spacing.lg,
   },
 
@@ -274,32 +337,49 @@ const styles = StyleSheet.create({
   },
 
   accountName: {
-    flex: 1,
-    fontSize: 17,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
+    flexShrink: 1,
   },
 
-  checkmarkContainer: {
-    width: 28,
-    height: 28,
+  accountStatusCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
+    marginLeft: Spacing.md,
   },
 
-  organizeEventRow: {
+  organizeEventCard: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.light.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: Colors.light.backgroundSecondary,
+    gap: Spacing.lg,
+    marginTop: Spacing.md,
   },
 
   organizeIconContainer: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: "#E3E3E3",
+    borderWidth: 1,
+    borderColor: Colors.light.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: Spacing.lg,
+  },
+
+  organizeIconImage: {
+    width: 32,
+    height: 32,
+    resizeMode: "contain",
   },
 
   organizeText: {
@@ -310,6 +390,16 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
+    borderWidth: 1,
+  },
+  organizerStatusWrapper: {
+    justifyContent: "center",
+  },
+  organizerStatusCircle: {
+    marginLeft: Spacing.md,
+  },
+  organizerSectionPressed: {
+    opacity: 0.85,
   },
   organizerHeader: {
     flexDirection: "row",

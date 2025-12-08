@@ -4,7 +4,6 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { View, StyleSheet } from "react-native";
 import { useHomeHeader } from "@/src/core/components/HomeHeaderContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { MapContainer, MapContainerRef } from "../components/MapContainer";
 import { MapEventsCards } from "../components/MapEventsCards";
@@ -92,7 +91,6 @@ export default function MapaScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <StatusBar style="light" />
 
       <View style={styles.mapWrapper}>
         {isFocused ? (

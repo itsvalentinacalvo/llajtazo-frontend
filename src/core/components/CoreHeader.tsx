@@ -7,6 +7,7 @@ import { TopBar } from "./TopBarHamburgerMenu&Notif";
 import { SearchBar } from "./SearchBar";
 import { CategoryFilters } from "./CategoryFilters";
 import { useNavigation, CommonActions } from "@react-navigation/native";
+import { useStatusBarStyle } from "@/src/core/context/StatusBarContext";
 
 interface CoreHeaderProps {
   onSearchChange?: (text: string) => void;
@@ -28,6 +29,7 @@ function CoreHeaderImpl({
 }: CoreHeaderProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  useStatusBarStyle("light", "#2BBBFF");
 
   const handleNotificationPress = () => {
     navigation.dispatch(

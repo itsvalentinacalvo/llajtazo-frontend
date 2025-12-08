@@ -33,7 +33,7 @@ export const TEST_DATABASE = {
       about: "Productora de experiencias al aire libre",
       logo_url: require("@/src/core/assets/events/alice-park/profile.jpg"),
       followers: 9800,
-      suscribed: 0,
+      suscribed: 1,
     },
   ],
   lugares: [

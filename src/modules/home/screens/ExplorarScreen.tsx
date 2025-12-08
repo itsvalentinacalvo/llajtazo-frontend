@@ -10,7 +10,6 @@ import { SponsoredBanner } from "@/src/modules/home/components/SponsoredBanner";
 import { InviteCard } from "@/src/core/components/InviteCard";
 import { Spacing } from "@/src/core/constants/theme";
 import { useTheme } from "@/src/core/hooks/useTheme";
-import { StatusBar } from "expo-status-bar";
 import type { ExplorarStackParamList } from "../navigation/stacks/ExplorarStack";
 
 const GRID_GAP = Spacing.md;
@@ -181,7 +180,6 @@ export default function ExplorarScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <StatusBar style="light" />
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}

@@ -90,7 +90,6 @@ export default function BurgerMenuScreen(props: any) {
 
     const menuItems = [
       { icon: "ticket-outline", iconType: "ionicons", label: "Tus Tickets", route: "Tickets" },
-      { icon: "calendar", iconType: "feather", label: "Calendario", route: "Calendar" },
       { icon: "bookmark", iconType: "feather", label: "Guardados", route: "Saved" },
       { icon: "settings", iconType: "feather", label: "Configuración", route: "Settings" },
       { icon: "help-circle", iconType: "feather", label: "Contáctanos", route: "Contact" },

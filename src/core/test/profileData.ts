@@ -43,7 +43,7 @@ const PROFILE_ACCOUNTS_BASE = [
   },
 ];
 
-const LINKED_ORGANIZER_ID: number | null = 501;
+const LINKED_ORGANIZER_ID: number | null = 502;
 
 const linkedOrganizerRecord =
   LINKED_ORGANIZER_ID != null
