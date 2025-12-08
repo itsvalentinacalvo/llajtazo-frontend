@@ -4,9 +4,6 @@ import MapaScreen from "@/src/modules/home/screens/MapaScreen";
 
 export type MapaStackParamList = {
   MapaScreen: undefined;
-  // Add nested screens here as you develop
-  // DetalleEventoScreen: { eventId: string };
-  // EventoDetallesScreen: { eventId: string };
 };
 
 const Stack = createNativeStackNavigator<MapaStackParamList>();

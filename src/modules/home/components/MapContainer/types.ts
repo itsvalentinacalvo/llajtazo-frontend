@@ -7,5 +7,6 @@ export interface MapContainerRef {
 export interface MapContainerProps {
   events: MapEvent[];
   selectedEventId?: string;
+  selectedCategory?: string;
   onSelectEvent: (event: MapEvent) => void;
 }
