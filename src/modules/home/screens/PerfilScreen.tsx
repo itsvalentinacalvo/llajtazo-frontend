@@ -19,7 +19,7 @@ import { useTheme } from "@/src/core/hooks/useTheme";
 import { Spacing, BorderRadius, Colors, Typography, CategoryPillColors } from "@/src/core/constants/theme";
 import ExpandableText from "@/src/modules/home/components/ExpandableText";
 import { ShareTab } from '@/src/core/components/ShareTab';
-import { EditPhotoTab } from '@/src//modules/home/components/EditPhotoTab';
+import { EditPhotoTab } from '@/src/modules/home/components/EditPhotoTab';
 import * as ImagePicker from 'expo-image-picker';
 import { SwitchAccountTab, AccountProfile } from '@/src/modules/home/components/SwitchAccountTab';
 import { interests as AVAILABLE_INTERESTS } from "@/src/modules/auth/screens/InterestsScreen";
