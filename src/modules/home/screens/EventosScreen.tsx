@@ -1,5 +1,7 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { View, StyleSheet, FlatList, useWindowDimensions } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useHomeHeader } from "@/src/core/components/HomeHeaderContext";
 import { EventCardSmall } from "@/src/core/components/EventCardSmall";
 import { SectionHeaderLocation } from "@/src/modules/home/components/SectionHeaderLocation";
@@ -8,6 +10,7 @@ import { SponsoredRow } from "@/src/modules/home/components/SponsoredRow";
 import { Spacing } from "@/src/core/constants/theme";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { useScreenInsets } from "@/src/core/hooks/useScreenInsets";
+import type { EventosStackParamList } from "../navigation/stacks/EventosStack";
 
 const BANNER_EVENTS = [
   {
@@ -279,11 +282,27 @@ type FeedItem =
 const GRID_GAP = Spacing.md;
 const HORIZONTAL_PADDING = Spacing.xl;
 
+type NavigationProp = NativeStackNavigationProp<EventosStackParamList>;
+
 export default function EventosScreen() {
+  const navigation = useNavigation<NavigationProp>();
   const { headerHeight } = useHomeHeader();
   const { theme } = useTheme();
   const { paddingBottom } = useScreenInsets();
   const { width: screenWidth } = useWindowDimensions();
+  const [savedEvents, setSavedEvents] = useState<Set<string>>(new Set());
+
+  const handleBookmarkToggle = useCallback((eventId: string) => {
+    setSavedEvents((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      return newSet;
+    });
+  }, []);
 
   const cardWidth = useMemo(() => {
     return (screenWidth - HORIZONTAL_PADDING * 2 - GRID_GAP) / 2;
@@ -332,6 +351,15 @@ export default function EventosScreen() {
 
   console.debug("[Home][EventosScreen] render", { feedItems: feedData.length });
 
+  const openEventDetail = useCallback((eventId: string) => {
+    const parentNav = navigation.getParent?.();
+    if (parentNav) {
+      (parentNav as any).navigate("EventDetail", { eventId });
+      return;
+    }
+    (navigation as any).navigate("EventDetail", { eventId });
+  }, [navigation]);
+
   const renderItem = ({ item }: { item: FeedItem }) => {
     switch (item.type) {
       case "section":
@@ -354,7 +382,9 @@ export default function EventosScreen() {
                 location={event.location}
                 image={event.image}
                 cardWidth={cardWidth}
-                onPress={() => console.log("Event pressed:", event.title)}
+                isSaved={savedEvents.has(event.id)}
+                onPress={() => openEventDetail(event.id)}
+                onBookmarkPress={() => handleBookmarkToggle(event.id)}
               />
             ))}
           </View>
@@ -363,7 +393,7 @@ export default function EventosScreen() {
         return (
           <SponsoredRow
             events={[item.events[0], item.events[1]]}
-            onEventPress={(event) => console.log("Sponsored pressed:", event.title)}
+            onEventPress={(event) => openEventDetail(event.id)}
           />
         );
       case "sponsoredBanner":
@@ -371,7 +401,7 @@ export default function EventosScreen() {
           <View style={styles.bannerContainer}>
             <SponsoredBanner
               events={BANNER_EVENTS}
-              onPress={(event) => console.log("Banner pressed:", event.title)}
+              onPress={(event) => openEventDetail(event.id)}
             />
           </View>
         );

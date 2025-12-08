@@ -259,7 +259,7 @@ export default function PerfilScreen() {
           <Feather name="menu" size={24} color={theme.text} />
         </Pressable>
         <Pressable style={styles.topNavButton} onPress={() => setShareVisible(true)}>
-          <Feather name="external-link" size={22} color={theme.text} />
+          <Feather name="share" size={22} color={theme.text} />
         </Pressable>
       </View>
 
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
     alignSelf: "center",
     minWidth: 160,
-    backgroundColor: "rgba(43, 187, 255, 0.08)",
+    backgroundColor: "transparent",
   },
   editButtonIcon: {
     marginRight: Spacing.sm,

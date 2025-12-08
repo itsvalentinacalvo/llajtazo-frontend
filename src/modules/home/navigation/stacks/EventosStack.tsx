@@ -4,9 +4,6 @@ import EventosScreen from "@/src/modules/home/screens/EventosScreen";
 
 export type EventosStackParamList = {
   EventosScreen: undefined;
-  // Add nested screens here as you develop
-  // DetalleEventoScreen: { eventId: string };
-  // ComentariosScreen: { eventId: string };
 };
 
 const Stack = createNativeStackNavigator<EventosStackParamList>();

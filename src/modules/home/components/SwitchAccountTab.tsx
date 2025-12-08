@@ -25,6 +25,7 @@ const { height } = Dimensions.get("window");
 export interface AccountProfile {
   id: string;
   name: string;
+  // avatar can be a remote URI (string) or a local require() (number)
   avatar: ImageSourcePropType | string | null;
   isSelected: boolean;
 }
@@ -92,7 +93,7 @@ export const SwitchAccountTab: React.FC<SwitchAccountTabProps> = ({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={onClose}
     >
       <Pressable style={styles.overlay} onPress={onClose} accessible={false} />

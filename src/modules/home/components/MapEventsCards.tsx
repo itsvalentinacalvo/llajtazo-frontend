@@ -23,6 +23,7 @@ interface MapEventsCardsProps {
   selectedEventId?: string;
   onEventChange: (event: MapEvent) => void;
   onBookmarkToggle?: (eventId: string) => void;
+  onEventPress?: (event: MapEvent) => void;
   bottomInset?: number;
 }
 
@@ -31,6 +32,7 @@ export function MapEventsCards({
   selectedEventId,
   onEventChange,
   onBookmarkToggle,
+  onEventPress,
   bottomInset = 0,
 }: MapEventsCardsProps) {
   const { width: screenWidth } = useWindowDimensions();
@@ -75,13 +77,15 @@ export function MapEventsCards({
     const isLast = index === events.length - 1;
 
     return (
-      <View
-        style={[
+      <Pressable
+        onPress={() => onEventPress?.(item)}
+        style={({ pressed }) => [
           styles.cardWrapper,
           {
             width: cardWidth,
             marginLeft: isFirst ? horizontalPadding : Spacing.md / 2,
             marginRight: isLast ? horizontalPadding : Spacing.md / 2,
+            opacity: pressed ? 0.9 : 1,
           },
         ]}
       >
@@ -127,7 +131,7 @@ export function MapEventsCards({
             />
           </Pressable>
         </View>
-      </View>
+      </Pressable>
     );
   };
 

@@ -1,8 +1,8 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Image, ImageSourcePropType } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { View, StyleSheet, Pressable, Image, ImageSourcePropType, useWindowDimensions } from "react-native";
+import { Feather, Octicons } from "@expo/vector-icons";
 import { ThemedText } from "@/src/core/components/ThemedText";
-import { BorderRadius, Spacing, Shadows } from "@/src/core/constants/theme";
+import { BorderRadius, Spacing, Shadows, Colors } from "@/src/core/constants/theme";
 import { useTheme } from "@/src/core/hooks/useTheme";
 
 interface EventCardProps {
@@ -11,7 +11,9 @@ interface EventCardProps {
   location: string;
   attendees: number;
   image: ImageSourcePropType;
+  isSaved?: boolean;
   onPress?: () => void;
+  onBookmarkPress?: () => void;
 }
 
 export function EventCard({
@@ -20,9 +22,16 @@ export function EventCard({
   location,
   attendees,
   image,
+  isSaved = false,
   onPress,
+  onBookmarkPress,
 }: EventCardProps) {
   const { theme } = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  
+  const cardWidth = screenWidth < 350 ? 160 : screenWidth < 400 ? 170 : 180;
+  const imageHeight = screenWidth < 350 ? 100 : 120;
+  
   console.debug("[Core][EventCard] render", { title });
 
   return (
@@ -30,16 +39,31 @@ export function EventCard({
       onPress={onPress}
       style={({ pressed }) => [
         styles.container,
+        { width: cardWidth },
         Shadows.card,
         pressed && styles.pressed,
       ]}
     >
-      <View style={styles.imageContainer}>
+      <View style={[styles.imageContainer, { height: imageHeight }]}>
         <Image source={image} style={styles.eventImage} resizeMode="cover" />
         <View style={styles.dateBadge}>
           <ThemedText style={styles.dateDay}>{date.day}</ThemedText>
           <ThemedText style={styles.dateMonth}>{date.month}</ThemedText>
         </View>
+        <Pressable
+          style={styles.bookmarkButton}
+          onPress={(e) => {
+            e.stopPropagation?.();
+            onBookmarkPress?.();
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Octicons
+            name={isSaved ? "bookmark-filled" : "bookmark"}
+            size={18}
+            color={isSaved ? Colors.light.error : Colors.light.white}
+          />
+        </Pressable>
       </View>
 
       <View style={styles.content}>
@@ -72,7 +96,7 @@ export function EventCard({
             color={theme.textSecondary}
             style={styles.locationIcon}
           />
-          <ThemedText style={[styles.location, { color: theme.textSecondary }]}>
+          <ThemedText style={[styles.location, { color: theme.textSecondary }]} numberOfLines={1}>
             {location}
           </ThemedText>
         </View>
@@ -83,7 +107,6 @@ export function EventCard({
 
 const styles = StyleSheet.create({
   container: {
-    width: 180,
     backgroundColor: "#FFFFFF",
     borderRadius: BorderRadius.md,
     marginRight: Spacing.md,
@@ -93,7 +116,6 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: "100%",
-    height: 120,
     borderTopLeftRadius: BorderRadius.md,
     borderTopRightRadius: BorderRadius.md,
     overflow: 'hidden',
@@ -129,6 +151,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
     letterSpacing: 0.3,
   },
+  bookmarkButton: {
+    position: "absolute",
+    top: Spacing.sm,
+    right: Spacing.sm,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   content: {
     padding: Spacing.md,
   },
@@ -149,6 +182,7 @@ const styles = StyleSheet.create({
   location: {
     fontSize: 11,
     color: "#888888",
+    flex: 1,
   },
   attendeesRow: {
     flexDirection: "row",

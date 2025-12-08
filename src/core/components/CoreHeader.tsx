@@ -11,7 +11,7 @@ import { useNavigation, CommonActions } from "@react-navigation/native";
 interface CoreHeaderProps {
   onSearchChange?: (text: string) => void;
   onFilterPress?: () => void;
-  onCategoryPress?: (label: string) => void;
+  onCategoryPress?: (label: string | undefined) => void;
   selectedCategory?: string;
   onLayout?: (event: LayoutChangeEvent) => void;
 }

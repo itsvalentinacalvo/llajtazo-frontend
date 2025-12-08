@@ -1,9 +1,10 @@
-import React from "react";
-import { StyleSheet, ScrollView, Pressable, View, ImageSourcePropType } from "react-native";
+import React, { useEffect } from "react";
+import { StyleSheet, ScrollView, Pressable, View, ImageSourcePropType, useWindowDimensions } from "react-native";
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from "react-native-reanimated";
 import { ThemedText } from "@/src/core/components/ThemedText";
-import { Spacing, Shadows, CategoryPillColors } from "@/src/core/constants/theme";
+import { Spacing, Shadows, CategoryPillColors, Colors } from "@/src/core/constants/theme";
 import { TEST_DATABASE } from "@/src/core/test/testDatabase";
 
 type IconLibrary = "feather" | "material" | "ionicons" | "fontawesome" | "image";
@@ -96,6 +97,8 @@ function CategoryIcon({ icon, iconLibrary, size, color }: { icon: string | Image
   }
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 function CategoryPill({
   label,
   icon,
@@ -105,30 +108,88 @@ function CategoryPill({
   isLast,
   onPress,
 }: CategoryPillProps) {
+  const { width: screenWidth } = useWindowDimensions();
+  const scale = useSharedValue(1);
+  const borderOpacity = useSharedValue(0);
+  const glowOpacity = useSharedValue(0);
+
+  const isSmallScreen = screenWidth < 350;
+  const pillHeight = isSmallScreen ? 36 : 42;
+  const iconSize = isSmallScreen ? 16 : 20;
+  const fontSize = isSmallScreen ? 13 : 15;
+  const horizontalPadding = isSmallScreen ? 14 : 20;
+
+  useEffect(() => {
+    if (isSelected) {
+      scale.value = withSpring(1.05, { damping: 15, stiffness: 200 });
+      borderOpacity.value = withTiming(1, { duration: 200 });
+      glowOpacity.value = withTiming(0.4, { duration: 200 });
+    } else {
+      scale.value = withSpring(1, { damping: 15, stiffness: 200 });
+      borderOpacity.value = withTiming(0, { duration: 200 });
+      glowOpacity.value = withTiming(0, { duration: 200 });
+    }
+  }, [isSelected, scale, borderOpacity, glowOpacity]);
+
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const animatedBorderStyle = useAnimatedStyle(() => ({
+    opacity: borderOpacity.value,
+  }));
+
+  const animatedGlowStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
+  }));
+
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
-      style={({ pressed }) => [
+      style={[
         styles.pillContainer,
         Shadows.categoryPill,
+        { height: pillHeight, borderRadius: pillHeight / 2 },
         isLast && styles.pillContainerLast,
-        pressed && styles.pressed,
+        animatedContainerStyle,
       ]}
     >
-      <View style={[styles.pillContent, { backgroundColor: color }]}>
+      <Animated.View 
+        style={[
+          styles.selectedGlow, 
+          { 
+            backgroundColor: color,
+            borderRadius: pillHeight / 2,
+          },
+          animatedGlowStyle,
+        ]} 
+      />
+      
+      <View style={[styles.pillContent, { backgroundColor: color, paddingHorizontal: horizontalPadding }]}>
         <View style={styles.pillIcon}>
-          <CategoryIcon icon={icon} iconLibrary={iconLibrary} size={20} color="#FFFFFF" />
+          <CategoryIcon icon={icon} iconLibrary={iconLibrary} size={iconSize} color="#FFFFFF" />
         </View>
-        <ThemedText style={styles.pillLabel}>{label}</ThemedText>
+        <ThemedText style={[styles.pillLabel, { fontSize }]}>{label}</ThemedText>
       </View>
-    </Pressable>
+      
+      <Animated.View 
+        style={[
+          styles.selectedBorder, 
+          { 
+            borderColor: Colors.light.white,
+            borderRadius: pillHeight / 2,
+          },
+          animatedBorderStyle,
+        ]} 
+      />
+    </AnimatedPressable>
   );
 }
 
 interface CategoryFiltersProps {
   categories?: Category[];
   selectedCategory?: string;
-  onCategoryPress?: (label: string) => void;
+  onCategoryPress?: (label: string | undefined) => void;
 }
 
 const DEFAULT_CATEGORIES: Category[] = TEST_DATABASE.categorias.map((category, index) => {
@@ -147,11 +208,20 @@ export function CategoryFilters({
   selectedCategory,
   onCategoryPress,
 }: CategoryFiltersProps) {
+  const handlePress = (label: string) => {
+    if (selectedCategory === label) {
+      onCategoryPress?.(undefined);
+    } else {
+      onCategoryPress?.(label);
+    }
+  };
+
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.scrollContent}
+      style={styles.scrollView}
     >
       {categories.map((category, index) => (
         <CategoryPill
@@ -161,7 +231,7 @@ export function CategoryFilters({
           iconLibrary={category.iconLibrary}
           color={category.color}
           isSelected={selectedCategory === category.label}
-          onPress={() => onCategoryPress?.(category.label)}
+          onPress={() => handlePress(category.label)}
           isLast={index === categories.length - 1}
         />
       ))}
@@ -170,34 +240,48 @@ export function CategoryFilters({
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    overflow: "visible",
+  },
   scrollContent: {
     paddingHorizontal: Spacing.xl,
+    paddingVertical: 8,
   },
   pillContainer: {
-    height: 42,
-    borderRadius: 21,
     marginRight: Spacing.sm,
-    overflow: "hidden",
+    overflow: "visible",
+    position: "relative",
   },
   pillContainerLast: {
     marginRight: 0,
   },
-  pressed: {
-    opacity: 0.7,
-  },
   pillContent: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
     paddingVertical: 10,
     height: "100%",
+    borderRadius: 21,
   },
   pillIcon: {
     marginRight: 8,
   },
   pillLabel: {
-    fontSize: 15,
     fontWeight: "600",
     color: "#FFFFFF",
+  },
+  selectedBorder: {
+    position: "absolute",
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    borderWidth: 2.5,
+  },
+  selectedGlow: {
+    position: "absolute",
+    top: -4,
+    left: -4,
+    right: -4,
+    bottom: -4,
   },
 });
