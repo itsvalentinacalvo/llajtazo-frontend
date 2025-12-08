@@ -5,7 +5,8 @@ import AuthStackNavigator from "@/src/modules/auth/navigation/AuthNavigator";
 import HomeNavigator from "@/src/modules/home/navigation/HomeNavigator";
 import NotificationsScreen from "@/src/core/screens/NotificationsScreen";
 import BurgerMenuScreen from "@/src/core/screens/BurgerMenuScreen";
-import SplashScreen from "@/src/core/screens/SplashScreen";
+import EventDetailScreen from "@/src/modules/events/screens/EventDetailScreen";
+import { SplashScreen, AppBootstrapProvider } from "@/src/modules/splash-screen";
 import { navigationRef } from "@/src/core/navigation/navigationRef";
 
 const Stack = createNativeStackNavigator();
@@ -28,7 +29,6 @@ export default function RootNavigator() {
     setIsSplashComplete(true);
   }, []);
 
-  // expose callbacks to children screens via props rather than global
   const handleAuthLogout = () => {
     console.log("[RootNavigator] handleAuthLogout called -> logging out");
     try {
@@ -65,49 +65,57 @@ export default function RootNavigator() {
   const initial = isAuthenticated ? "Home" : "Auth";
 
   return (
-    <Animated.View style={[{ flex: 1 }, rootAnimatedStyle]}>
-      <Stack.Navigator
-        // force remount when auth state changes so initialRouteName is applied
-        key={isAuthenticated ? "auth-true" : "auth-false"}
-        id="RootStack"
-        initialRouteName={initial}
-        screenOptions={{ headerShown: false }}
-      >
-        <Stack.Screen name="Auth">
-          {(props) => <AuthStackNavigator {...props} onAuthSuccess={() => setIsAuthenticated(true)} initialRouteName={authStartRoute} />}
-        </Stack.Screen>
-
-        <Stack.Screen name="Home" component={HomeNavigator} />
-
-        {/* Global modals with different animations */}
-        {/* BurgerMenu: Drawer-like animation (slide from left) */}
-        <Stack.Screen
-          name="BurgerMenu"
-          options={{
-            headerShown: false,
-            // present as a transparent modal so the screen underneath stays visible
-            presentation: "transparentModal",
-            // use a subtle fade for the overall modal layer; the drawer itself animates with Reanimated
-            animation: "fade",
-            gestureEnabled: false,
-          }}
+    <AppBootstrapProvider>
+      <Animated.View style={[{ flex: 1 }, rootAnimatedStyle]}>
+        <Stack.Navigator
+          key={isAuthenticated ? "auth-true" : "auth-false"}
+          id="RootStack"
+          initialRouteName={initial}
+          screenOptions={{ headerShown: false }}
         >
-          {(props) => <BurgerMenuScreen {...props} onAuthLogOut={handleAuthLogout} />}
-        </Stack.Screen>
+          <Stack.Screen name="Auth">
+            {(props) => <AuthStackNavigator {...props} onAuthSuccess={() => setIsAuthenticated(true)} initialRouteName={authStartRoute} />}
+          </Stack.Screen>
 
-        {/* Notifications: Drill animation (slide from right - forward/back) */}
-        <Stack.Screen
-          name="Notifications"
-          component={NotificationsScreen}
-          options={{
-            headerShown: false,
-            gestureEnabled: true,
-            gestureDirection: "horizontal",
-            animation: "slide_from_right",
-            presentation: "card",
-          }}
-        />
-      </Stack.Navigator>
-    </Animated.View>
+          <Stack.Screen name="Home" component={HomeNavigator} />
+
+          <Stack.Screen
+            name="BurgerMenu"
+            options={{
+              headerShown: false,
+              presentation: "transparentModal",
+              animation: "fade",
+              gestureEnabled: false,
+            }}
+          >
+            {(props) => <BurgerMenuScreen {...props} onAuthLogOut={handleAuthLogout} />}
+          </Stack.Screen>
+
+          <Stack.Screen
+            name="Notifications"
+            component={NotificationsScreen}
+            options={{
+              headerShown: false,
+              gestureEnabled: true,
+              gestureDirection: "horizontal",
+              animation: "slide_from_right",
+              presentation: "card",
+            }}
+          />
+
+          <Stack.Screen
+            name="EventDetail"
+            component={EventDetailScreen}
+            options={{
+              headerShown: false,
+              presentation: "card",
+              animation: "slide_from_right",
+              gestureEnabled: true,
+              gestureDirection: "horizontal",
+            }}
+          />
+        </Stack.Navigator>
+      </Animated.View>
+    </AppBootstrapProvider>
   );
 }

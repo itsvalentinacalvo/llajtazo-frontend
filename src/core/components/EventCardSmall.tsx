@@ -5,14 +5,14 @@ import {
   Pressable,
   Image,
   ImageSourcePropType,
+  useWindowDimensions,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather, Octicons } from "@expo/vector-icons";
 import { ThemedText } from "@/src/core/components/ThemedText";
-import { BorderRadius, Spacing, Shadows } from "@/src/core/constants/theme";
+import { BorderRadius, Spacing, Shadows, Colors } from "@/src/core/constants/theme";
 import { useTheme } from "@/src/core/hooks/useTheme";
 
 const IMAGE_HEIGHT_RATIO = 0.79;
-const CONTENT_HEIGHT = 60;
 
 interface EventCardSmallProps {
   title: string;
@@ -22,7 +22,9 @@ interface EventCardSmallProps {
   image: ImageSourcePropType;
   cardWidth: number;
   noMargin?: boolean;
+  isSaved?: boolean;
   onPress?: () => void;
+  onBookmarkPress?: () => void;
 }
 
 export function EventCardSmall({
@@ -33,10 +35,24 @@ export function EventCardSmall({
   image,
   cardWidth,
   noMargin = false,
+  isSaved = false,
   onPress,
+  onBookmarkPress,
 }: EventCardSmallProps) {
   const { theme } = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
   const imageHeight = cardWidth * IMAGE_HEIGHT_RATIO;
+  
+  const isSmallScreen = screenWidth < 350;
+  const baseContentHeight = isSmallScreen ? 48 : 56;
+  const contentHeightWithSubtitle = isSmallScreen ? 64 : 74;
+  const contentHeight = subtitle ? contentHeightWithSubtitle : baseContentHeight;
+  const titleFontSize = isSmallScreen ? 12 : 14;
+  const subtitleFontSize = isSmallScreen ? 10 : 12;
+  const locationFontSize = isSmallScreen ? 9 : 11;
+  const bookmarkSize = isSmallScreen ? 14 : 16;
+  const bookmarkButtonSize = isSmallScreen ? 24 : 28;
+  
   console.debug("[Core][EventCardSmall] render", { title });
 
   return (
@@ -56,15 +72,29 @@ export function EventCardSmall({
           <ThemedText style={styles.dateDay}>{date.day}</ThemedText>
           <ThemedText style={styles.dateMonth}>{date.month}</ThemedText>
         </View>
+        <Pressable
+          style={[styles.bookmarkButton, { width: bookmarkButtonSize, height: bookmarkButtonSize, borderRadius: bookmarkButtonSize / 2 }]}
+          onPress={(e) => {
+            e.stopPropagation?.();
+            onBookmarkPress?.();
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Octicons
+            name={isSaved ? "bookmark-filled" : "bookmark"}
+            size={bookmarkSize}
+            color={isSaved ? Colors.light.error : Colors.light.white}
+          />
+        </Pressable>
       </View>
 
-      <View style={styles.content}>
-        <ThemedText style={styles.title} numberOfLines={1}>
+      <View style={[styles.content, { height: contentHeight, padding: isSmallScreen ? Spacing.xs : Spacing.sm }]}>
+        <ThemedText style={[styles.title, { fontSize: titleFontSize }]} numberOfLines={1}>
           {title}
         </ThemedText>
         {subtitle ? (
           <ThemedText
-            style={[styles.subtitle, { color: theme.textSecondary }]}
+            style={[styles.subtitle, { color: theme.textSecondary, fontSize: subtitleFontSize }]}
             numberOfLines={1}
           >
             {subtitle}
@@ -73,12 +103,12 @@ export function EventCardSmall({
         <View style={styles.locationRow}>
           <Feather
             name="map-pin"
-            size={10}
+            size={isSmallScreen ? 8 : 10}
             color={theme.textSecondary}
             style={styles.locationIcon}
           />
           <ThemedText
-            style={[styles.location, { color: theme.textSecondary }]}
+            style={[styles.location, { color: theme.textSecondary, fontSize: locationFontSize }]}
             numberOfLines={1}
           >
             {location}
@@ -135,18 +165,23 @@ const styles = StyleSheet.create({
     textAlign: "center",
     letterSpacing: 0.2,
   },
+  bookmarkButton: {
+    position: "absolute",
+    top: Spacing.sm,
+    right: Spacing.sm,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   content: {
-    padding: Spacing.sm,
-    height: CONTENT_HEIGHT,
+    justifyContent: "center",
   },
   title: {
-    fontSize: 14,
     fontWeight: "600",
     color: "#1A1A1A",
     marginBottom: 2,
   },
   subtitle: {
-    fontSize: 12,
     marginBottom: 2,
   },
   locationRow: {
@@ -158,7 +193,6 @@ const styles = StyleSheet.create({
     marginRight: 3,
   },
   location: {
-    fontSize: 11,
     flex: 1,
   },
 });

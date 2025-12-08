@@ -1,5 +1,7 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useHomeHeader } from "@/src/core/components/HomeHeaderContext";
 import { SectionHeader } from "@/src/core/components/MoreSection";
 import { EventCard } from "@/src/core/components/EventCard";
@@ -9,6 +11,7 @@ import { InviteCard } from "@/src/core/components/InviteCard";
 import { Spacing } from "@/src/core/constants/theme";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { StatusBar } from "expo-status-bar";
+import type { ExplorarStackParamList } from "../navigation/stacks/ExplorarStack";
 
 const GRID_GAP = Spacing.md;
 const HORIZONTAL_PADDING = Spacing.xl;
@@ -139,11 +142,36 @@ const FOR_YOU_EVENTS = [
   },
 ];
 
+type NavigationProp = NativeStackNavigationProp<ExplorarStackParamList>;
+
 export default function ExplorarScreen() {
+  const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
   const { width: screenWidth } = useWindowDimensions();
   const { headerHeight } = useHomeHeader();
+  const [savedEvents, setSavedEvents] = useState<Set<string>>(new Set());
   console.debug("[Home][ExplorarScreen] render", { screenWidth });
+
+  const openEventDetail = useCallback((eventId: string) => {
+    const parentNav = navigation.getParent?.();
+    if (parentNav) {
+      (parentNav as any).navigate("EventDetail", { eventId });
+      return;
+    }
+    (navigation as any).navigate("EventDetail", { eventId });
+  }, [navigation]);
+
+  const handleBookmarkToggle = useCallback((eventId: string) => {
+    setSavedEvents((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      return newSet;
+    });
+  }, []);
 
   const cardWidth = useMemo(() => {
     return (screenWidth - HORIZONTAL_PADDING * 2 - GRID_GAP) / 2;
@@ -162,7 +190,7 @@ export default function ExplorarScreen() {
         <View style={styles.featuredContainer}>
           <SponsoredBanner
             events={FEATURED_EVENTS}
-            onPress={(event) => console.log(`Featured event ${event.title} pressed`)}
+            onPress={(event) => openEventDetail(event.id)}
             autoPlayInterval={7000}
           />
         </View>
@@ -185,7 +213,9 @@ export default function ExplorarScreen() {
               location={event.location}
               attendees={event.attendees}
               image={event.image}
-              onPress={() => console.log(`Event ${event.title} pressed`)}
+              isSaved={savedEvents.has(event.id)}
+              onPress={() => openEventDetail(event.id)}
+              onBookmarkPress={() => handleBookmarkToggle(event.id)}
             />
           ))}
         </ScrollView>
@@ -212,7 +242,9 @@ export default function ExplorarScreen() {
               location={event.location}
               attendees={event.attendees}
               image={event.image}
-              onPress={() => console.log(`Event ${event.title} pressed`)}
+              isSaved={savedEvents.has(event.id)}
+              onPress={() => openEventDetail(event.id)}
+              onBookmarkPress={() => handleBookmarkToggle(event.id)}
             />
           ))}
         </ScrollView>
@@ -232,7 +264,9 @@ export default function ExplorarScreen() {
               location={event.location}
               image={event.image}
               cardWidth={cardWidth}
-              onPress={() => console.log(`Event ${event.title} pressed`)}
+              isSaved={savedEvents.has(event.id)}
+              onPress={() => openEventDetail(event.id)}
+              onBookmarkPress={() => handleBookmarkToggle(event.id)}
             />
           ))}
         </View>

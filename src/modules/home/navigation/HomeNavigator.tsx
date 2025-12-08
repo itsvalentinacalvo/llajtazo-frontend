@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { View } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -29,6 +29,15 @@ const Stack = createNativeStackNavigator(); // ← AGREGADO
 function HomeTabNavigatorContent() {
   const { selectedCategory, setSelectedCategory, setHeaderHeight } = useHomeHeader();
   const [showHeader, setShowHeader] = useState(true);
+  const toggleHeader = useCallback(
+    (visible: boolean) => {
+      setShowHeader(visible);
+      if (!visible) {
+        setHeaderHeight(0);
+      }
+    },
+    [setHeaderHeight]
+  );
 
   return (
     <>
@@ -56,39 +65,36 @@ function HomeTabNavigatorContent() {
           name="ExplorarTab"
           component={ExplorarStack}
           options={{ title: "Explorar" }}
-          listeners={() => ({
-            focus: () => setShowHeader(true),
-          })}
+          listeners={{
+            focus: () => toggleHeader(true),
+          }}
         />
 
         <Tab.Screen
           name="EventosTab"
           component={EventosStack}
           options={{ title: "Eventos" }}
-          listeners={() => ({
-            focus: () => setShowHeader(true),
-          })}
+          listeners={{
+            focus: () => toggleHeader(true),
+          }}
         />
 
         <Tab.Screen
           name="MapaTab"
           component={MapaStack}
           options={{ title: "Mapa", unmountOnBlur: true } as any}
-          listeners={() => ({
-            focus: () => setShowHeader(true),
-          })}
+          listeners={{
+            focus: () => toggleHeader(true),
+          }}
         />
 
         <Tab.Screen
           name="PerfilTab"
           component={PerfilStack}
           options={{ title: "Perfil" }}
-          listeners={() => ({
-            focus: () => {
-              setShowHeader(false);
-              setHeaderHeight(0);
-            },
-          })}
+          listeners={{
+            focus: () => toggleHeader(false),
+          }}
         />
       </Tab.Navigator>
     </>
