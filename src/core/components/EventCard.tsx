@@ -59,9 +59,10 @@ export function EventCard({
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Octicons
-            name={isSaved ? "bookmark-filled" : "bookmark"}
+            name="bookmark-filled"
             size={18}
-            color={isSaved ? Colors.light.error : Colors.light.white}
+            color={isSaved ? Colors.light.error : "#999999"}
+            style={styles.bookmarkIcon}
           />
         </Pressable>
       </View>
@@ -157,10 +158,13 @@ const styles = StyleSheet.create({
     right: Spacing.sm,
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    borderRadius: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  bookmarkIcon: {
+    transform: [{ scaleX:1.1 }],
   },
   content: {
     padding: Spacing.md,

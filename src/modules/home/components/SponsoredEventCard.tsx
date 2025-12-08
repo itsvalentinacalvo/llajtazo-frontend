@@ -56,6 +56,7 @@ export function SponsoredEventCard({
         image={image}
         cardWidth={cardWidth}
         noMargin
+        showBookmark={false}
         onPress={onPress}
       />
     </View>

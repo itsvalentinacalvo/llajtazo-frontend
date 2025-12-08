@@ -23,6 +23,7 @@ interface EventCardSmallProps {
   cardWidth: number;
   noMargin?: boolean;
   isSaved?: boolean;
+  showBookmark?: boolean;
   onPress?: () => void;
   onBookmarkPress?: () => void;
 }
@@ -36,6 +37,7 @@ export function EventCardSmall({
   cardWidth,
   noMargin = false,
   isSaved = false,
+  showBookmark = true,
   onPress,
   onBookmarkPress,
 }: EventCardSmallProps) {
@@ -52,7 +54,7 @@ export function EventCardSmall({
   const locationFontSize = isSmallScreen ? 9 : 11;
   const bookmarkSize = isSmallScreen ? 14 : 16;
   const bookmarkButtonSize = isSmallScreen ? 24 : 28;
-  
+
   console.debug("[Core][EventCardSmall] render", { title });
 
   return (
@@ -72,20 +74,23 @@ export function EventCardSmall({
           <ThemedText style={styles.dateDay}>{date.day}</ThemedText>
           <ThemedText style={styles.dateMonth}>{date.month}</ThemedText>
         </View>
-        <Pressable
-          style={[styles.bookmarkButton, { width: bookmarkButtonSize, height: bookmarkButtonSize, borderRadius: bookmarkButtonSize / 2 }]}
-          onPress={(e) => {
-            e.stopPropagation?.();
-            onBookmarkPress?.();
-          }}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Octicons
-            name={isSaved ? "bookmark-filled" : "bookmark"}
-            size={bookmarkSize}
-            color={isSaved ? Colors.light.error : Colors.light.white}
-          />
-        </Pressable>
+        {showBookmark ? (
+          <Pressable
+            style={[styles.bookmarkButton, { width: bookmarkButtonSize, height: bookmarkButtonSize }]}
+            onPress={(e) => {
+              e.stopPropagation?.();
+              onBookmarkPress?.();
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Octicons
+              name="bookmark-filled"
+              size={bookmarkSize}
+              color={isSaved ? Colors.light.error : "#a0a0a0ff"}
+              style={styles.bookmarkIcon}
+            />
+          </Pressable>
+        ) : null}
       </View>
 
       <View style={[styles.content, { height: contentHeight, padding: isSmallScreen ? Spacing.xs : Spacing.sm }]}>
@@ -143,35 +148,41 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: Spacing.sm,
     left: Spacing.sm,
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.xs,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.sm,
     backgroundColor: "rgba(255, 255, 255, 0.7)",
     minWidth: 28,
     alignItems: "center",
   },
   dateDay: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: "700",
     color: "#FF5757",
     textAlign: "center",
     lineHeight: 14,
   },
   dateMonth: {
-    fontSize: 7,
+    fontSize: 10,
     fontWeight: "600",
     color: "#FF5757",
     textTransform: "uppercase",
     textAlign: "center",
     letterSpacing: 0.2,
   },
-  bookmarkButton: {
+ bookmarkButton: {
     position: "absolute",
     top: Spacing.sm,
     right: Spacing.sm,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  bookmarkIcon: {
+    transform: [{ scaleX:1.1 }],
   },
   content: {
     justifyContent: "center",

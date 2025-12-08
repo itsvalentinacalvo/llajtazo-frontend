@@ -76,13 +76,13 @@ const styles = StyleSheet.create({
     height: Spacing.md,
   },
   bottomSpacer: {
-    height: Spacing.md,
+    height: Spacing.xl,
   },
   innerSpacer: {
-    height: Spacing.md,
+    height: Spacing.lg,
   },
   divider: {
-    height: 1,
+    height: 2,
     width: "100%",
   },
   row: {
