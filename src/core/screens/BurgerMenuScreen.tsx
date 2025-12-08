@@ -91,23 +91,33 @@ export default function BurgerMenuScreen(props: any) {
     const menuItems = [
       { icon: "ticket-outline", iconType: "ionicons", label: "Tus Tickets", route: "Tickets" },
       { icon: "calendar", iconType: "feather", label: "Calendario", route: "Calendar" },
-      { icon: "bookmark", iconType: "feather", label: "Guardado", route: "Saved" },
+      { icon: "bookmark", iconType: "feather", label: "Guardados", route: "Saved" },
       { icon: "settings", iconType: "feather", label: "Configuración", route: "Settings" },
       { icon: "help-circle", iconType: "feather", label: "Contáctanos", route: "Contact" },
     ];
 
     const handleItemPress = (route?: string) => {
       try {
+        const navigateToRoute = () => {
+          try {
+            if (!route) return;
+            // Many app screens live under the Home navigator; route names here
+            // should target screens inside Home. Navigate into the Home stack
+            // so nested screens like "Tickets" resolve correctly.
+            if (navigation && typeof navigation.navigate === "function") {
+              navigation.navigate("Home", { screen: route });
+            }
+          } catch (e) {
+            console.warn("Navigation error from drawer item after close:", e);
+          }
+        };
+
         if (onClose) {
           onClose(() => {
-            try {
-              route && navigation.navigate && navigation.navigate(route);
-            } catch (e) {
-              console.warn("Navigation error from drawer item after close:", e);
-            }
+            navigateToRoute();
           });
         } else {
-          route && navigation.navigate && navigation.navigate(route);
+          navigateToRoute();
         }
       } catch (e) {
         console.warn("Error handling drawer item press:", e);

@@ -1,13 +1,19 @@
 import React, { useState } from "react";
 import { View } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
 import { CoreTabBar } from "@/src/core/components/CoreTabBar";
 import { CoreHeader } from "@/src/core/components/CoreHeader";
 import { HomeHeaderProvider, useHomeHeader } from "@/src/core/components/HomeHeaderContext";
+
 import ExplorarStack from "@/src/modules/home/navigation/stacks/ExplorarStack";
 import EventosStack from "@/src/modules/home/navigation/stacks/EventosStack";
 import MapaStack from "@/src/modules/home/navigation/stacks/MapaStack";
 import PerfilStack from "@/src/modules/home/navigation/stacks/PerfilStack";
+
+import MenuNavigator from "@/src/modules/menu/navigation/MenuNavigator";
+import SavedEventsScreen from "@/src/modules/menu/screens/SavedEventsScreen";
 
 // Tab Navigator Types
 export type HomeTabParamList = {
@@ -18,14 +24,14 @@ export type HomeTabParamList = {
 };
 
 const Tab = createBottomTabNavigator<HomeTabParamList>();
+const Stack = createNativeStackNavigator(); // ← AGREGADO
 
-// Tab Navigator Content
 function HomeTabNavigatorContent() {
   const { selectedCategory, setSelectedCategory, setHeaderHeight } = useHomeHeader();
   const [showHeader, setShowHeader] = useState(true);
 
   return (
-    <React.Fragment>
+    <>
       {showHeader && (
         <View style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 10 }} pointerEvents="box-none">
           <CoreHeader
@@ -54,6 +60,7 @@ function HomeTabNavigatorContent() {
             focus: () => setShowHeader(true),
           })}
         />
+
         <Tab.Screen
           name="EventosTab"
           component={EventosStack}
@@ -62,6 +69,7 @@ function HomeTabNavigatorContent() {
             focus: () => setShowHeader(true),
           })}
         />
+
         <Tab.Screen
           name="MapaTab"
           component={MapaStack}
@@ -70,6 +78,7 @@ function HomeTabNavigatorContent() {
             focus: () => setShowHeader(true),
           })}
         />
+
         <Tab.Screen
           name="PerfilTab"
           component={PerfilStack}
@@ -82,19 +91,24 @@ function HomeTabNavigatorContent() {
           })}
         />
       </Tab.Navigator>
-    </React.Fragment>
+    </>
   );
 }
 
-// Main export - HomeNavigator is the Tab Navigator with Stacks inside
 export default function HomeNavigator() {
-  console.debug("[Home][HomeNavigator] render");
-
   return (
     <HomeHeaderProvider>
-      <View style={{ flex: 1 }}>
-        <HomeTabNavigatorContent />
-      </View>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        
+        {/* Tus TABS principales */}
+        <Stack.Screen name="HomeTabs" component={HomeTabNavigatorContent} />
+
+        {/* Aquí viven las pantallas del BurgerMenu */}
+        <Stack.Screen name="Tickets" component={MenuNavigator} />
+        {/* Pantalla de Guardados accesible desde el Burger Menu */}
+        <Stack.Screen name="Saved" component={SavedEventsScreen} />
+        
+      </Stack.Navigator>
     </HomeHeaderProvider>
   );
 }
