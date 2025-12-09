@@ -138,8 +138,11 @@ export default function RootNavigator() {
 
           <Stack.Screen
             name="Business"
-            options={{ headerShown: false, gestureEnabled: false }}
             component={BusinessFlowNavigator}
+            options={{ headerShown: false, gestureEnabled: false }}
+          />
+
+          <Stack.Screen
             name="PaymentCheckout"
             component={PaymentCheckoutScreen}
             options={{
