@@ -79,7 +79,7 @@ export function TicketSelector({
                   style={[
                     styles.priceText,
                     {
-                      color: isDisabled ? theme.textSecondary : "#2BBBFF",
+                      color: isDisabled ? theme.textSecondary : isSelected ? theme.primary : theme.textSecondary,
                     },
                   ]}
                 >

@@ -8,6 +8,13 @@ import BurgerMenuScreen from "@/src/core/screens/BurgerMenuScreen";
 import BusinessBurgerMenuScreen from "@/src/modules/business/screens/BusinessBurgerMenuScreen";
 import EventDetailScreen from "@/src/modules/events/screens/EventDetailScreen";
 import BusinessFlowNavigator from "@/src/modules/business/navigation/BusinessFlowNavigator";
+import PaymentCheckoutScreen from "@/src/modules/payment/screens/PaymentCheckoutScreen";
+import PaymentMethodScreen from "@/src/modules/payment/screens/PaymentMethodScreen";
+import PaymentQrSimpleScreen from "@/src/modules/payment/screens/PaymentQrSimpleScreen";
+import PaymentCardScreen from "@/src/modules/payment/screens/PaymentCardScreen";
+import PaymentSuccessScreen from "@/src/modules/payment/screens/PaymentSuccessScreen";
+import PaymentErrorScreen from "@/src/modules/payment/screens/PaymentErrorScreen";
+import PaymentResultScreen from "@/src/modules/payment/screens/PaymentResultScreen";
 import { SplashScreen, AppBootstrapProvider } from "@/src/modules/splash-screen";
 import { navigationRef } from "@/src/core/navigation/navigationRef";
 
@@ -133,6 +140,83 @@ export default function RootNavigator() {
             name="Business"
             options={{ headerShown: false, gestureEnabled: false }}
             component={BusinessFlowNavigator}
+            name="PaymentCheckout"
+            component={PaymentCheckoutScreen}
+            options={{
+              headerShown: false,
+              presentation: "card",
+              animation: "slide_from_right",
+              gestureEnabled: true,
+              gestureDirection: "horizontal",
+            }}
+          />
+          <Stack.Screen
+            name="PaymentMethod"
+            component={PaymentMethodScreen}
+            options={{
+              headerShown: false,
+              presentation: "card",
+              animation: "slide_from_right",
+              gestureEnabled: true,
+              gestureDirection: "horizontal",
+            }}
+          />
+          <Stack.Screen
+            name="QrSimple"
+            component={PaymentQrSimpleScreen}
+            options={{
+              headerShown: false,
+              presentation: "card",
+              animation: "slide_from_right",
+              gestureEnabled: true,
+              gestureDirection: "horizontal",
+            }}
+          />
+          <Stack.Screen
+            name="CardPayment"
+            component={PaymentCardScreen}
+            options={{
+              headerShown: false,
+              presentation: "card",
+              animation: "slide_from_right",
+              gestureEnabled: true,
+              gestureDirection: "horizontal",
+            }}
+          />
+          <Stack.Screen
+            name="Success"
+            component={PaymentSuccessScreen}
+            options={{
+              headerShown: false,
+              presentation: "card",
+              animation: "slide_from_right",
+              gestureEnabled: true,
+              gestureDirection: "horizontal",
+            }}
+          />
+
+          <Stack.Screen
+            name="Error"
+            component={PaymentErrorScreen}
+            options={{
+              headerShown: false,
+              presentation: "card",
+              animation: "slide_from_right",
+              gestureEnabled: true,
+              gestureDirection: "horizontal",
+            }}
+          />
+
+          <Stack.Screen
+            name="Result"
+            component={PaymentResultScreen}
+            options={{
+              headerShown: false,
+              presentation: "card",
+              animation: "slide_from_right",
+              gestureEnabled: true,
+              gestureDirection: "horizontal",
+            }}
           />
         </Stack.Navigator>
       </Animated.View>
