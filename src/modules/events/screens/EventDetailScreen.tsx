@@ -232,7 +232,7 @@ export default function EventDetailScreen() {
               selectedTicketId={selectedTicketId}
               onSelectTicket={setSelectedTicketId}
             />
-            <BuyTicketButton style={[styles.buyButton, styles.buyButtonSecondary]} />
+            <BuyTicketButton style={[styles.buyButton, styles.buyButtonSecondary]} selectedTicketId={selectedTicketId} eventId={eventId} />
           </View>
         </View>
       </ScrollView>
