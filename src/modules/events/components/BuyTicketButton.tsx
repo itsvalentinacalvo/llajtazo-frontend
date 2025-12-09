@@ -1,6 +1,7 @@
 import React from "react";
 import { Pressable, StyleProp, StyleSheet, ViewStyle } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { BorderRadius, Spacing } from "@/src/core/constants/theme";
 import { useTheme } from "@/src/core/hooks/useTheme";
@@ -9,18 +10,34 @@ interface BuyTicketButtonProps {
   label?: string;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  selectedTicketId?: string | null;
+  eventId?: string;
 }
 
 export function BuyTicketButton({
   label = "COMPRAR TICKET",
-  onPress = () => {},
+  onPress,
   style,
+  selectedTicketId,
+  eventId,
 }: BuyTicketButtonProps) {
   const { theme } = useTheme();
+  const navigation = useNavigation();
+
+  const handlePress = () => {
+    if (onPress) {
+      onPress();
+    } else {
+      navigation.navigate("PaymentCheckout" as never, {
+        selectedTicketId,
+        eventId,
+      } as never);
+    }
+  };
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       style={({ pressed }) => [
         styles.button,
         { backgroundColor: theme.primary },
