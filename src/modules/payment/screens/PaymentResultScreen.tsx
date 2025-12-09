@@ -11,6 +11,7 @@ import { ThemedText } from "@/src/core/components/ThemedText";
 import { Colors, Spacing, BorderRadius, Typography } from "@/src/core/constants/theme";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { useProfile } from "@/src/core/context/ProfileContext";
+import { navigationRef } from "@/src/core/navigation/navigationRef";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const TICKET_WIDTH = SCREEN_WIDTH - Spacing.xl * 2;
@@ -50,10 +51,25 @@ export default function PaymentResultScreen() {
   const serviceFee = Number(rawServiceFee) || 0;
   const total = Number(rawTotal) || subtotal + serviceFee;
 
+  const handleBackToHome = () => {
+    const parent = navigation.getParent();
+    if (parent && typeof parent.reset === "function") {
+      parent.reset({ index: 0, routes: [{ name: "Home" as never }] });
+      return;
+    }
+
+    if (navigationRef.isReady()) {
+      navigationRef.reset({ index: 0, routes: [{ name: "Home" }] });
+      return;
+    }
+
+    (navigation as any).navigate?.("Home");
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}> 
       <View style={[styles.header, { paddingTop: insets.top + Spacing.lg }]}> 
-        <Pressable onPress={() => navigation.goBack()} style={styles.headerButton}> 
+        <Pressable onPress={handleBackToHome} style={styles.headerButton}> 
           <Feather name="arrow-left" size={22} color={theme.text} />
         </Pressable>
 
