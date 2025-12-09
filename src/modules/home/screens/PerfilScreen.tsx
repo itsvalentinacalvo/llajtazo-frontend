@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import {
   StyleSheet,
   View,
@@ -27,9 +27,9 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { useProfile } from "@/src/core/context/ProfileContext";
 import {
   PROFILE_ACCOUNTS,
-  PROFILE_BUSINESS_LINK,
   PROFILE_DEFAULT_AVATAR,
 } from "@/src/core/test/profileData";
+import { useBusiness } from "@/src/modules/business/context/BusinessContext";
 
 const PILL_COLORS = CategoryPillColors;
 const TOP_NAV_HEIGHT = 50;
@@ -44,8 +44,7 @@ export default function PerfilScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { profile, updateName, updateBio, updateAvatar, updateInterests } = useProfile();
-  
-  const { isLinked: isBusinessLinked, organizer: linkedOrganizer } = PROFILE_BUSINESS_LINK;
+  const { isBusinessLinked, organizer: businessOrganizer, openBusinessPortal, switchToBusiness } = useBusiness();
   const [accounts, setAccounts] = useState<AccountProfile[]>(() =>
     PROFILE_ACCOUNTS.map((account, index) => ({
       ...account,
@@ -55,6 +54,7 @@ export default function PerfilScreen() {
   const [activeAccountId, setActiveAccountId] = useState<string | null>(
     PROFILE_ACCOUNTS[0]?.id ?? null
   );
+  const [isBusinessAccountActive, setIsBusinessAccountActive] = useState(false);
   const resolvedActiveAccountId = activeAccountId ?? accounts[0]?.id ?? null;
   const [isEditing, setIsEditing] = useState(false);
   const [username, setUsername] = useState<string>(profile.name);
@@ -159,6 +159,22 @@ export default function PerfilScreen() {
   const [editPhotoVisible, setEditPhotoVisible] = useState(false);
   const [pendingAvatar, setPendingAvatar] = useState<string | null>(null);
 
+  const linkedOrganizerCard = useMemo(() => {
+    if (!isBusinessLinked || !businessOrganizer) {
+      return undefined;
+    }
+
+    return {
+      id: businessOrganizer.id,
+      name: businessOrganizer.name,
+      about: businessOrganizer.bio,
+      followers: businessOrganizer.followers,
+      subscribed: true,
+      logo: businessOrganizer.logo,
+      isSelected: isBusinessAccountActive,
+    } as const;
+  }, [isBusinessLinked, businessOrganizer, isBusinessAccountActive]);
+
   const ensurePermissions = async (forCamera: boolean) => {
     try {
       if (Platform.OS !== 'web') {
@@ -242,6 +258,20 @@ export default function PerfilScreen() {
     : resolveAvatarSource(selectedAccount?.avatar) ?? profile.avatar ?? defaultAvatarSource;
 
   const handleSelectAccount = (accountId: string) => {
+    if (linkedOrganizerCard && accountId === linkedOrganizerCard.id) {
+      setIsBusinessAccountActive(true);
+      setAccounts((prev) =>
+        prev.map((account) => ({
+          ...account,
+          isSelected: false,
+        }))
+      );
+      setSwitchVisible(false);
+      switchToBusiness();
+      return;
+    }
+
+    setIsBusinessAccountActive(false);
     setActiveAccountId(accountId);
     setAccounts((prev) =>
       prev.map((account) => ({
@@ -250,6 +280,12 @@ export default function PerfilScreen() {
       }))
     );
     setSwitchVisible(false);
+  };
+
+  const handleOrganizeEvent = () => {
+    setIsBusinessAccountActive(false);
+    setSwitchVisible(false);
+    openBusinessPortal("RegisterBusiness");
   };
 
   return (
@@ -471,8 +507,9 @@ export default function PerfilScreen() {
         onClose={() => setSwitchVisible(false)}
         accounts={accounts}
         onSelectAccount={handleSelectAccount}
-        linkedOrganizer={isBusinessLinked ? linkedOrganizer ?? undefined : undefined}
+        linkedOrganizer={linkedOrganizerCard}
         showOrganizeEventCta={!isBusinessLinked}
+        onOrganizeEvent={handleOrganizeEvent}
       />
       <EditPhotoTab
         visible={editPhotoVisible}

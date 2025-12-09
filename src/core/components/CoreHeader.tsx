@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#2BBBFF",
     borderBottomLeftRadius: BorderRadius.xl,
     borderBottomRightRadius: BorderRadius.xl,
-    paddingBottom: Spacing.xl + CATEGORY_OVERLAP,
+    paddingBottom: Spacing.xs + CATEGORY_OVERLAP,
     paddingHorizontal: Spacing.xl,
   },
   categoryContainer: {

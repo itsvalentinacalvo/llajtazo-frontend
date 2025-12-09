@@ -30,7 +30,7 @@ export interface AccountProfile {
 }
 
 interface LinkedOrganizerInfo {
-  id: number;
+  id: string;
   name: string;
   about: string;
   followers: number;
@@ -247,12 +247,21 @@ export const SwitchAccountTab: React.FC<SwitchAccountTabProps> = ({
             </View>
           </Pressable>
         ) : showOrganizeEventCta ? (
-          <View style={styles.organizeEventCard}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.organizeEventCard,
+              pressed && styles.organizeEventCardPressed,
+            ]}
+            onPress={() => {
+              onClose();
+              _onOrganizeEvent && _onOrganizeEvent();
+            }}
+          >
             <View style={styles.organizeIconContainer}>
               <Image source={require("../assets/Confetti.png")} style={styles.organizeIconImage} />
             </View>
             <Text style={[styles.organizeText, { color: theme.text }]}>Organiza tu Evento</Text>
-          </View>
+          </Pressable>
         ) : null}
       </Animated.View>
     </Modal>
@@ -363,6 +372,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.backgroundSecondary,
     gap: Spacing.lg,
     marginTop: Spacing.md,
+  },
+  organizeEventCardPressed: {
+    opacity: 0.85,
   },
 
   organizeIconContainer: {

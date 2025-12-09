@@ -1,3 +1,39 @@
+import { EventFormData } from "@/src/modules/business/types/event";
+
+export interface DraftEvent extends EventFormData {
+  id: string;
+  createdAt: string;
+  status: "draft" | "preview" | "published";
+}
+
+const draftEventsStore: DraftEvent[] = [];
+
+export const addDraftEvent = (formData: EventFormData): DraftEvent => {
+  const draftEvent: DraftEvent = {
+    ...formData,
+    id: `draft-${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    status: "preview",
+  };
+  draftEventsStore.push(draftEvent);
+  return draftEvent;
+};
+
+export const getDraftEventById = (id: string): DraftEvent | undefined => {
+  return draftEventsStore.find((event) => event.id === id);
+};
+
+export const updateDraftEventStatus = (id: string, status: DraftEvent["status"]): void => {
+  const event = draftEventsStore.find((e) => e.id === id);
+  if (event) {
+    event.status = status;
+  }
+};
+
+export const getAllDraftEvents = (): DraftEvent[] => {
+  return [...draftEventsStore];
+};
+
 export const TEST_DATABASE = {
   categorias: [
     { id: 1, nombre: "Cultura" },
@@ -16,6 +52,8 @@ export const TEST_DATABASE = {
       avatar_url: require("@/src/core/test/assets/user-profile.png"),
       created_at: "2024-07-12T14:23:00Z",
       bio: "Estoy usando Llajtazo App para descubrir eventos increibles cerca de mi",
+      isVinculated: false,
+      business_organizer_id: null,
     },
   ],
   organizadores: [

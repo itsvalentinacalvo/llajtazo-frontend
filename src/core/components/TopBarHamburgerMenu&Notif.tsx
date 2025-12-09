@@ -3,6 +3,7 @@ import { View, StyleSheet, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { Spacing } from "@/src/core/constants/theme";
+import { useBusiness } from "@/src/modules/business/context/BusinessContext";
 
 interface TopBarProps {
   onNotificationPress?: () => void;
@@ -10,15 +11,19 @@ interface TopBarProps {
 
 export function TopBar({ onNotificationPress }: TopBarProps) {
   const navigation = useNavigation();
+  const { isBusinessAuthenticated } = useBusiness();
 
   return (
     <View style={styles.container}>
       <Pressable
         onPress={() => {
-          console.debug("[Core][TopBar] openBurgerMenu");
-          // antes abríamos el Drawer; ahora navegamos a la pantalla BurgerMenu registrada en Root
+          console.debug("[Core][TopBar] openBurgerMenu, isBusinessAuthenticated:", isBusinessAuthenticated);
           try {
-            (navigation as any).navigate("BurgerMenu");
+            if (isBusinessAuthenticated) {
+              (navigation as any).navigate("BusinessBurgerMenu");
+            } else {
+              (navigation as any).navigate("BurgerMenu");
+            }
           } catch (e) {
             console.debug("[Core][TopBar] navigation to BurgerMenu failed", e);
           }

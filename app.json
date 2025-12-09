@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "src/core/assets/icon/icon.png",
     "scheme": "llajtazofrontend",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
@@ -34,10 +34,7 @@
           "image": "src/core/assets/icon/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "backgroundColor": "#ffffff"
         }
       ]
     ],

@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: Spacing.sm,
     left: Spacing.sm,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: BorderRadius.sm,
     backgroundColor: "rgba(255, 255, 255, 0.7)",
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FF5757",
     textAlign: "center",
-    lineHeight: 14,
+    lineHeight: 16,
   },
   dateMonth: {
     fontSize: 10,
