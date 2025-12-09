@@ -4,12 +4,17 @@ import { useTheme } from "@/src/core/hooks/useTheme";
 import { useScreenInsets } from "@/src/core/hooks/useScreenInsets";
 import { Spacing } from "@/src/core/constants/theme";
 
+interface ScreenScrollViewProps extends ScrollViewProps {
+  contentHorizontalPadding?: number;
+}
+
 export function ScreenScrollView({
   children,
   contentContainerStyle,
   style,
+  contentHorizontalPadding = Spacing.xl,
   ...scrollViewProps
-}: ScrollViewProps) {
+}: ScreenScrollViewProps) {
   const { theme } = useTheme();
   const { paddingTop, paddingBottom, scrollInsetBottom } = useScreenInsets();
   console.debug("[Core][ScreenScrollView] render", { paddingTop, paddingBottom });
@@ -25,6 +30,7 @@ export function ScreenScrollView({
         {
           paddingTop,
           paddingBottom,
+          paddingHorizontal: contentHorizontalPadding,
         },
         styles.contentContainer,
         contentContainerStyle,
@@ -42,6 +48,5 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: Spacing.xl,
   },
 });

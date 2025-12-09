@@ -5,7 +5,9 @@ import AuthStackNavigator from "@/src/modules/auth/navigation/AuthNavigator";
 import HomeNavigator from "@/src/modules/home/navigation/HomeNavigator";
 import NotificationsScreen from "@/src/core/screens/NotificationsScreen";
 import BurgerMenuScreen from "@/src/core/screens/BurgerMenuScreen";
+import BusinessBurgerMenuScreen from "@/src/modules/business/screens/BusinessBurgerMenuScreen";
 import EventDetailScreen from "@/src/modules/events/screens/EventDetailScreen";
+import BusinessFlowNavigator from "@/src/modules/business/navigation/BusinessFlowNavigator";
 import { SplashScreen, AppBootstrapProvider } from "@/src/modules/splash-screen";
 import { navigationRef } from "@/src/core/navigation/navigationRef";
 
@@ -92,6 +94,18 @@ export default function RootNavigator() {
           </Stack.Screen>
 
           <Stack.Screen
+            name="BusinessBurgerMenu"
+            options={{
+              headerShown: false,
+              presentation: "transparentModal",
+              animation: "fade",
+              gestureEnabled: false,
+            }}
+          >
+            {(props) => <BusinessBurgerMenuScreen {...props} onAuthLogOut={handleAuthLogout} />}
+          </Stack.Screen>
+
+          <Stack.Screen
             name="Notifications"
             component={NotificationsScreen}
             options={{
@@ -113,6 +127,12 @@ export default function RootNavigator() {
               gestureEnabled: true,
               gestureDirection: "horizontal",
             }}
+          />
+
+          <Stack.Screen
+            name="Business"
+            options={{ headerShown: false, gestureEnabled: false }}
+            component={BusinessFlowNavigator}
           />
         </Stack.Navigator>
       </Animated.View>

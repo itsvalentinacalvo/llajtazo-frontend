@@ -43,7 +43,10 @@ const PROFILE_ACCOUNTS_BASE = [
   },
 ];
 
-const LINKED_ORGANIZER_ID: number | null = 502;
+const LINKED_ORGANIZER_ID: number | null =
+  typeof PRIMARY_TEST_USER.business_organizer_id === "number"
+    ? PRIMARY_TEST_USER.business_organizer_id
+    : null;
 
 const linkedOrganizerRecord =
   LINKED_ORGANIZER_ID != null

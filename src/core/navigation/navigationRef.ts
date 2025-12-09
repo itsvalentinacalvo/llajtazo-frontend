@@ -5,6 +5,8 @@ export type RootStackParamList = {
   Home: undefined;
   BurgerMenu: undefined;
   Notifications: undefined;
+  EventDetail: { eventId?: number } | undefined;
+  Business: { initialAuthRoute?: "LoginBusiness" | "RegisterBusiness" } | undefined;
 };
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();

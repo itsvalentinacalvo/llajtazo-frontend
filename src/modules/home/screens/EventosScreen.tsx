@@ -423,7 +423,7 @@ export default function EventosScreen() {
           return `item-${index}`;
         }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: headerHeight + Spacing.sm, paddingBottom }}
+        contentContainerStyle={{ paddingTop: headerHeight, paddingBottom }}
       />
       {/* Header rendered by Tab Navigator */}
     </View>
