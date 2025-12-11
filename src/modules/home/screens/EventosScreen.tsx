@@ -3,6 +3,7 @@ import { View, StyleSheet, FlatList, useWindowDimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useHomeHeader } from "@/src/core/components/HomeHeaderContext";
+import { useSavedEvents } from "@/src/core/context/SavedEventsContext";
 import { EventCardSmall } from "@/src/core/components/EventCardSmall";
 import { SectionHeaderLocation } from "@/src/modules/home/components/SectionHeaderLocation";
 import { SponsoredBanner } from "@/src/modules/home/components/SponsoredBanner";
@@ -290,19 +291,27 @@ export default function EventosScreen() {
   const { theme } = useTheme();
   const { paddingBottom } = useScreenInsets();
   const { width: screenWidth } = useWindowDimensions();
-  const [savedEvents, setSavedEvents] = useState<Set<string>>(new Set());
+  const { isSaved, toggleSaved } = useSavedEvents();
 
-  const handleBookmarkToggle = useCallback((eventId: string) => {
-    setSavedEvents((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(eventId)) {
-        newSet.delete(eventId);
-      } else {
-        newSet.add(eventId);
-      }
-      return newSet;
-    });
+  const formatDateTimeForSave = useCallback((event: any) => {
+    if (!event) return undefined;
+    if (typeof event.date === "string") {
+      const dateStr = event.date.toUpperCase();
+      return event.time ? `${dateStr} - ${event.time}` : dateStr;
+    }
+    if (event.date && typeof event.date.day !== "undefined") {
+      const day = event.date.day;
+      const month = (event.date.month || "").toString().toUpperCase();
+      const weekday = event.date.weekday ? ` - ${event.date.weekday.toString().toUpperCase()}` : "";
+      const time = event.time ? ` - ${event.time}` : "";
+      return `${day} DE ${month}${weekday}${time}`;
+    }
+    return event.dateTime ?? undefined;
   }, []);
+
+  const handleBookmarkToggle = useCallback((event: any) => {
+    toggleSaved({ id: event.id, title: event.title, image: event.image, dateTime: formatDateTimeForSave(event), location: event.location });
+  }, [toggleSaved, formatDateTimeForSave]);
 
   const cardWidth = useMemo(() => {
     return (screenWidth - HORIZONTAL_PADDING * 2 - GRID_GAP) / 2;
@@ -382,9 +391,9 @@ export default function EventosScreen() {
                 location={event.location}
                 image={event.image}
                 cardWidth={cardWidth}
-                isSaved={savedEvents.has(event.id)}
+                isSaved={isSaved(event.id)}
                 onPress={() => openEventDetail(event.id)}
-                onBookmarkPress={() => handleBookmarkToggle(event.id)}
+                onBookmarkPress={() => handleBookmarkToggle(event)}
               />
             ))}
           </View>

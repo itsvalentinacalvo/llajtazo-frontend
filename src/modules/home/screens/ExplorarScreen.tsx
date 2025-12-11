@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native"
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useHomeHeader } from "@/src/core/components/HomeHeaderContext";
+import { useSavedEvents } from "@/src/core/context/SavedEventsContext";
 import { SectionHeader } from "@/src/core/components/MoreSection";
 import { EventCard } from "@/src/core/components/EventCard";
 import { EventCardSmall } from "@/src/core/components/EventCardSmall";
@@ -148,7 +149,7 @@ export default function ExplorarScreen() {
   const { theme } = useTheme();
   const { width: screenWidth } = useWindowDimensions();
   const { headerHeight } = useHomeHeader();
-  const [savedEvents, setSavedEvents] = useState<Set<string>>(new Set());
+  const { isSaved, toggleSaved } = useSavedEvents();
   console.debug("[Home][ExplorarScreen] render", { screenWidth });
 
   const openEventDetail = useCallback((eventId: string) => {
@@ -160,17 +161,32 @@ export default function ExplorarScreen() {
     (navigation as any).navigate("EventDetail", { eventId });
   }, [navigation]);
 
-  const handleBookmarkToggle = useCallback((eventId: string) => {
-    setSavedEvents((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(eventId)) {
-        newSet.delete(eventId);
-      } else {
-        newSet.add(eventId);
-      }
-      return newSet;
-    });
+  const formatDateTimeForSave = useCallback((event: any) => {
+    // event.date can be string or { day, month, weekday }
+    if (!event) return undefined;
+    if (typeof event.date === "string") {
+      const dateStr = event.date.toUpperCase();
+      return event.time ? `${dateStr} - ${event.time}` : dateStr;
+    }
+    if (event.date && typeof event.date.day !== "undefined") {
+      const day = event.date.day;
+      const month = (event.date.month || "").toString().toUpperCase();
+      const weekday = event.date.weekday ? ` - ${event.date.weekday.toString().toUpperCase()}` : "";
+      const time = event.time ? ` - ${event.time}` : "";
+      return `${day} DE ${month}${weekday}${time}`;
+    }
+    return event.dateTime ?? undefined;
   }, []);
+
+  const handleBookmarkToggle = useCallback((event: any) => {
+    toggleSaved({
+      id: event.id,
+      title: event.title,
+      image: event.image,
+      dateTime: formatDateTimeForSave(event),
+      location: event.location,
+    });
+  }, [toggleSaved, formatDateTimeForSave]);
 
   const cardWidth = useMemo(() => {
     return (screenWidth - HORIZONTAL_PADDING * 2 - GRID_GAP) / 2;
@@ -211,9 +227,9 @@ export default function ExplorarScreen() {
               location={event.location}
               attendees={event.attendees}
               image={event.image}
-              isSaved={savedEvents.has(event.id)}
+              isSaved={isSaved(event.id)}
               onPress={() => openEventDetail(event.id)}
-              onBookmarkPress={() => handleBookmarkToggle(event.id)}
+              onBookmarkPress={() => handleBookmarkToggle(event)}
             />
           ))}
         </ScrollView>
@@ -240,9 +256,9 @@ export default function ExplorarScreen() {
               location={event.location}
               attendees={event.attendees}
               image={event.image}
-              isSaved={savedEvents.has(event.id)}
+              isSaved={isSaved(event.id)}
               onPress={() => openEventDetail(event.id)}
-              onBookmarkPress={() => handleBookmarkToggle(event.id)}
+              onBookmarkPress={() => handleBookmarkToggle(event)}
             />
           ))}
         </ScrollView>
@@ -262,9 +278,9 @@ export default function ExplorarScreen() {
               location={event.location}
               image={event.image}
               cardWidth={cardWidth}
-              isSaved={savedEvents.has(event.id)}
+              isSaved={isSaved(event.id)}
               onPress={() => openEventDetail(event.id)}
-              onBookmarkPress={() => handleBookmarkToggle(event.id)}
+              onBookmarkPress={() => handleBookmarkToggle(event)}
             />
           ))}
         </View>

@@ -9,6 +9,7 @@ import { MapContainer, MapContainerRef } from "../components/MapContainer";
 import { MapEventsCards } from "../components/MapEventsCards";
 import { GoogleMapsButton } from "../components/GoogleMapsButton";
 import { MAP_EVENTS, MapEvent, CATEGORY_CONFIG } from "../constants/mapEvents";
+import { useSavedEvents } from "@/src/core/context/SavedEventsContext";
 import { Spacing } from "@/src/core/constants/theme";
 import type { MapaStackParamList } from "../navigation/stacks/MapaStack";
 
@@ -23,11 +24,9 @@ export default function MapaScreen() {
   const mapRef = useRef<MapContainerRef>(null);
   const isFocused = useIsFocused();
   const { selectedCategory } = useHomeHeader();
-  const [savedEvents, setSavedEvents] = useState<Set<string>>(
-    new Set(MAP_EVENTS.filter((e) => e.isSaved).map((e) => e.id))
-  );
+  const { isSaved, toggleSaved } = useSavedEvents();
 
-  const allEventsWithSaved = MAP_EVENTS.map((e) => ({ ...e, isSaved: savedEvents.has(e.id) }));
+  const allEventsWithSaved = MAP_EVENTS.map((e) => ({ ...e, isSaved: isSaved(e.id) }));
 
   const filteredEvents = selectedCategory
     ? allEventsWithSaved.filter((e) => {
@@ -74,17 +73,21 @@ export default function MapaScreen() {
     setSelectedEvent(event);
   }, []);
 
-  const handleBookmarkToggle = useCallback((eventId: string) => {
-    setSavedEvents((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(eventId)) {
-        newSet.delete(eventId);
-      } else {
-        newSet.add(eventId);
-      }
-      return newSet;
-    });
+  const formatDateTimeForSave = useCallback((event: any) => {
+    if (!event) return undefined;
+    if (typeof event.date === "string") {
+      const dateStr = event.date.toUpperCase();
+      return event.time ? `${dateStr} - ${event.time}` : dateStr;
+    }
+    return event.dateTime ?? undefined;
   }, []);
+
+  const handleBookmarkToggle = useCallback((eventIdOrObj: any) => {
+    // accept either id or full event object
+    const ev = typeof eventIdOrObj === "string" ? MAP_EVENTS.find((e) => e.id === eventIdOrObj) : eventIdOrObj;
+    if (!ev) return;
+    toggleSaved({ id: ev.id, title: ev.title, image: ev.image, dateTime: formatDateTimeForSave(ev), location: ev.location });
+  }, [toggleSaved, formatDateTimeForSave]);
 
   const bottomInset = insets.bottom > 0 ? insets.bottom : 16;
   const cardsBottomOffset = TAB_BAR_HEIGHT + bottomInset;
