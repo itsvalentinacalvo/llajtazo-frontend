@@ -548,7 +548,7 @@ export default function PerfilBusinessScreen() {
             {organizerEvents.map((event) => (
               <EventCard
                 key={event.id}
-                eventId={event.id}
+                event={event}
                 onPress={() => handleEventPress(event.id)}
               />
             ))}
@@ -853,12 +853,13 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     // iOS shadow
     shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     // Android elevation
     elevation: 4,
     marginBottom: Spacing.md,
+    backgroundColor: "#FFFFFF",
   },
   eventCard: {
     flexDirection: "row",

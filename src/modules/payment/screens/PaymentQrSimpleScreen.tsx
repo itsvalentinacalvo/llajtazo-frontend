@@ -23,6 +23,13 @@ export default function PaymentQrSimpleScreen() {
   const subtotal = Number((route.params as any)?.subtotal) || 0;
   const serviceFee = Number((route.params as any)?.serviceFee) || 0;
   const selectedTicketId = (route.params as any)?.selectedTicketId;
+  const eventId = (route.params as any)?.eventId;
+  const methodId = (route.params as any)?.methodId;
+  const eventTitle = (route.params as any)?.eventTitle;
+  const eventVenue = (route.params as any)?.eventVenue;
+  const eventDate = (route.params as any)?.eventDate;
+  const eventTime = (route.params as any)?.eventTime;
+  const eventImage = (route.params as any)?.eventImage;
 
   // === TIMER 10:00 ===
   const [timeLeft, setTimeLeft] = useState(600); // 10 min
@@ -52,12 +59,18 @@ export default function PaymentQrSimpleScreen() {
     console.log("Usuario indica que ya realizó el pago");
     // Navigate to the payment success screen in the payment stack
     (navigation as any).navigate("Success", {
-      ticketId: "temp",
       ticketCount,
       selectedTicketId,
       subtotal,
       serviceFee,
       total,
+      eventId,
+      methodId,
+      eventTitle,
+      eventVenue,
+      eventDate,
+      eventTime,
+      eventImage,
     });
   };
 

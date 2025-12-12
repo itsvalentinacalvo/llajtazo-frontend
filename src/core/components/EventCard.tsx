@@ -4,7 +4,7 @@ import { Feather, Octicons } from "@expo/vector-icons";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { BorderRadius, Spacing, Shadows, Colors } from "@/src/core/constants/theme";
 import { useTheme } from "@/src/core/hooks/useTheme";
-import { findEventById } from "@/src/core/data/events";
+import { findEventById } from "@/src/core/test/events";
 
 interface EventCardProps {
   eventId: string;

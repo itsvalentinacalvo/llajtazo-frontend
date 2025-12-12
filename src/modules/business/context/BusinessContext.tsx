@@ -1,14 +1,8 @@
 import React, { createContext, useContext, useRef, useState, useCallback, ReactNode } from "react";
 import { navigationRef } from "@/src/core/navigation/navigationRef";
 import { PROFILE_BUSINESS_LINK, PRIMARY_TEST_USER } from "@/src/core/test/profileData";
-import {
-  BUSINESS_ORGANIZER,
-  BUSINESS_EVENTS,
-  BUSINESS_TICKETS,
-  BUSINESS_TEST_CREDENTIALS,
-  BusinessEvent,
-  Ticket,
-} from "@/src/modules/business/test/businessData";
+import { TEST_DATABASE } from "@/src/core/test/testDatabase";
+import { BusinessEvent, Ticket } from "@/src/modules/business/test/businessData";
 
 type BusinessPendingFlow =
   | {
@@ -25,11 +19,18 @@ type BusinessPendingFlow =
 interface BusinessContextType {
   isBusinessAuthenticated: boolean;
   isBusinessLinked: boolean;
-  organizer: typeof BUSINESS_ORGANIZER | null;
+  organizer: {
+    id: number;
+    name: string;
+    email?: string;
+    bio?: string;
+    followers?: number;
+    logo?: any;
+  } | null;
   events: BusinessEvent[];
   tickets: Ticket[];
   verificationCode: string;
-  loginBusiness: () => void;
+  loginBusiness: (organizerId: number) => void;
   logoutBusiness: () => void;
   switchToBusiness: () => void;
   addEvent: (event: BusinessEvent) => void;
@@ -53,27 +54,109 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   const initialLinkFlag = Boolean(
     PROFILE_BUSINESS_LINK.isLinked || PRIMARY_TEST_USER.isVinculated
   );
-  const initialOrganizer = initialLinkFlag ? BUSINESS_ORGANIZER : null;
+  const initialOrganizer = initialLinkFlag && TEST_DATABASE.organizadores[0]
+    ? {
+        id: TEST_DATABASE.organizadores[0].id,
+        name: TEST_DATABASE.organizadores[0].nombre,
+        email: TEST_DATABASE.organizadores[0].email,
+        bio: TEST_DATABASE.organizadores[0].about,
+        followers: TEST_DATABASE.organizadores[0].followers,
+        logo: TEST_DATABASE.organizadores[0].logo_url,
+      }
+    : null;
 
   const [isBusinessAuthenticated, setIsBusinessAuthenticated] = useState(false);
   const [isBusinessLinked, setIsBusinessLinked] = useState(initialLinkFlag);
-  const [organizer, setOrganizer] = useState<typeof BUSINESS_ORGANIZER | null>(initialOrganizer);
-  const [events, setEvents] = useState<BusinessEvent[]>(BUSINESS_EVENTS);
-  const [tickets, setTickets] = useState<Ticket[]>(BUSINESS_TICKETS);
+  const [organizer, setOrganizer] = useState<{
+    id: number;
+    name: string;
+    email?: string;
+    bio?: string;
+    followers?: number;
+    logo?: any;
+  } | null>(initialOrganizer);
+  const [events, setEvents] = useState<BusinessEvent[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const pendingFlowRef = useRef<BusinessPendingFlow | null>(null);
 
   const ensureOrganizer = useCallback(
-    (overrides?: Partial<typeof BUSINESS_ORGANIZER>) => ({
-      ...BUSINESS_ORGANIZER,
-      ...overrides,
-    }),
+    (orgId: number) => {
+      const record = TEST_DATABASE.organizadores.find((o) => o.id === orgId);
+      if (!record) return null;
+      return {
+        id: record.id,
+        name: record.nombre,
+        email: record.email,
+        bio: record.about,
+        followers: record.followers,
+        logo: record.logo_url,
+      };
+    },
     []
   );
 
-  const loginBusiness = useCallback(() => {
+  const loginBusiness = useCallback((organizerId: number) => {
+    const org = ensureOrganizer(organizerId);
+    if (!org) {
+      console.warn("[BusinessContext] Organizer not found for id", organizerId);
+      return;
+    }
     setIsBusinessAuthenticated(true);
     setIsBusinessLinked(true);
-    setOrganizer((prev) => prev ?? ensureOrganizer());
+    setOrganizer(org);
+    // Scope events and tickets to this organizer
+    const scopedEvents: BusinessEvent[] = (TEST_DATABASE.events || [])
+      .filter((e) => e.organizador_id === organizerId)
+      .map((e) => {
+        const place = (TEST_DATABASE.lugares || []).find((l) => l.id === e.lugar_id);
+        const dt = new Date(e.start_time);
+        const dayNum = dt.getDate().toString().padStart(2, "0");
+        const month = dt.toLocaleDateString("es-ES", { month: "long" }).toUpperCase();
+        const date = `${dayNum} DE ${month}`;
+        const time = dt.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+        // Prefer canonical totals from TEST_DATABASE event record
+        const ticketsSold = (e as any).ticketsSold ?? 0;
+        const totalSales = (e as any).totalSales ?? 0;
+        const status: BusinessEvent["status"] = "active";
+        return {
+          id: String(e.id),
+          title: e.titulo,
+          subtitle: e.subtitulo || "",
+          date,
+          time,
+          image: e.cover_url,
+          location: place?.nombre || "",
+          totalSales,
+          ticketsSold,
+          status,
+          tags: [],
+          descriptionHTML: e.descripcion,
+          googleMapsLink: place ? `https://www.google.com/maps?q=${place.latitud},${place.longitud}` : undefined,
+          startTimeIso: e.start_time,
+          // Attach tickets if present in DB
+          tickets: Array.isArray((e as any).tickets)
+            ? ((e as any).tickets as Array<any>).map((t) => ({
+                id: String(t.id),
+                name: t.name,
+                price: t.price,
+                currency: t.currency || "Bs.",
+                available: Boolean(t.available),
+                isSoldOut: Boolean(t.isSoldOut),
+              }))
+            : undefined,
+        } as BusinessEvent;
+      });
+    setEvents(scopedEvents);
+    const scopedTickets: Ticket[] = (TEST_DATABASE.tickets || [])
+      .filter((t) => t.organizador_id === organizerId)
+      .map((t) => ({
+        id: String(t.id),
+        name: t.nombre,
+        price: t.precio,
+        available: t.stock,
+        eventId: String(t.evento_id),
+      }));
+    setTickets(scopedTickets);
     pendingFlowRef.current = null;
   }, [ensureOrganizer]);
 
@@ -83,6 +166,8 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
 
   const switchToBusiness = useCallback(() => {
     if (isBusinessLinked && organizer) {
+      // Ensure scoped data is loaded before navigating
+      loginBusiness(organizer.id);
       setIsBusinessAuthenticated(true);
       if (navigationRef.isReady()) {
         navigationRef.navigate("Business" as never);
@@ -90,10 +175,15 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
     } else {
       openBusinessPortal("LoginBusiness");
     }
-  }, [isBusinessLinked, organizer]);
+  }, [isBusinessLinked, organizer, loginBusiness]);
 
   const addEvent = useCallback((event: BusinessEvent) => {
-    setEvents((prev) => [...prev, event]);
+    try {
+      console.log("[BusinessContext] Añadiendo evento", event);
+      setEvents((prev) => [...prev, event]);
+    } catch (err) {
+      console.error("[BusinessContext] Error al añadir evento:", err, { event });
+    }
   }, []);
 
   const updateEvent = useCallback((eventId: string, updates: Partial<BusinessEvent>) => {
@@ -128,16 +218,10 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
     if (!pending) {
       return false;
     }
-
-    const organizerOverrides =
-      pending.type === "register"
-        ? {
-            name: pending.organizationName || BUSINESS_ORGANIZER.name,
-            email: pending.email,
-          }
-        : undefined;
-
-    setOrganizer(ensureOrganizer(organizerOverrides));
+    // On verification, link to first organizer as a simple default
+    const firstOrg = TEST_DATABASE.organizadores[0];
+    const ensured = firstOrg ? ensureOrganizer(firstOrg.id) : null;
+    if (ensured) setOrganizer(ensured);
     setIsBusinessLinked(true);
     setIsBusinessAuthenticated(true);
     pendingFlowRef.current = null;
@@ -163,7 +247,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         organizer,
         events,
         tickets,
-        verificationCode: BUSINESS_TEST_CREDENTIALS.verificationCode,
+        verificationCode: "000000",
         loginBusiness,
         logoutBusiness,
         switchToBusiness,

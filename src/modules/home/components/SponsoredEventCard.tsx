@@ -5,7 +5,7 @@ import { ThemedText } from "@/src/core/components/ThemedText";
 import { EventCardSmall } from "@/src/core/components/EventCardSmall";
 import { Spacing } from "@/src/core/constants/theme";
 import { useTheme } from "@/src/core/hooks/useTheme";
-import { findEventById } from "@/src/core/data/events";
+import { findEventById } from "@/src/core/test/events";
 
 interface SponsoredEventCardProps {
   eventId: string;

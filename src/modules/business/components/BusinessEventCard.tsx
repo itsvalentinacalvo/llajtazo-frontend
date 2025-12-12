@@ -35,11 +35,17 @@ export function BusinessEventCard({
   const { theme } = useTheme();
 
   const parseDateParts = (dateStr: string) => {
-    const parts = dateStr.split(" DE ");
-    return {
-      day: parts[0] || "",
-      month: parts[1] || "",
-    };
+    // Admite "11 NOV" (nuevo formato) y "01 DE MAYO" (formato anterior)
+    const trimmed = (dateStr || "").trim();
+    if (!trimmed) return { day: "", month: "" };
+    if (trimmed.includes(" DE ")) {
+      const parts = trimmed.split(" DE ");
+      return { day: parts[0] || "", month: (parts[1] || "").toUpperCase() };
+    }
+    const tokens = trimmed.split(/\s+/);
+    const day = tokens[0] || "";
+    const month = (tokens[1] || "").toUpperCase();
+    return { day, month };
   };
 
   const dateParts = parseDateParts(date);
@@ -68,7 +74,7 @@ export function BusinessEventCard({
             style={[styles.schedule, { color: theme.primary }]}
             numberOfLines={1}
           >
-            {`${date} - ${time}`.toUpperCase()}
+            {`${dateParts.day} ${dateParts.month} - ${time}`.toUpperCase()}
           </ThemedText>
 
           <View style={styles.titleContainer}>

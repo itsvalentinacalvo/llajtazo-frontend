@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -26,6 +26,7 @@ import { TicketCounter } from "../components/TicketCounter";
 import { SectorCard } from "../components/SectorCard";
 import { PriceSummary } from "../components/PriceSummary";
 import { EventInfoCard } from "../components/EventInfoCard";
+import { getEventDetailById } from "@/src/core/test/eventDetailData";
 
 type PaymentCheckoutRouteProp = RouteProp<
   { PaymentCheckout: { selectedTicketId?: string | null; eventId?: string } },
@@ -39,12 +40,6 @@ interface Sector {
   soldOut: boolean;
 }
 
-const SECTORS: Sector[] = [
-  { id: "rockstar", name: "ROCKSTAR", price: 150, soldOut: true },
-  { id: "campo", name: "CAMPO", price: 200, soldOut: false },
-  { id: "terraza", name: "TERRAZA", price: 250, soldOut: false },
-];
-
 const SERVICE_FEE_PERCENTAGE = 0.04;
 
 export default function PaymentCheckoutScreen() {
@@ -56,22 +51,59 @@ export default function PaymentCheckoutScreen() {
   const selectedTicketId = route.params?.selectedTicketId;
   const eventId = route.params?.eventId;
 
-  // Extract sector name from ticket ID (e.g., "ticket-campo" -> "campo")
-  const getInitialSectorId = () => {
-    if (selectedTicketId) {
-      const sectorName = selectedTicketId.split("-")[1]; // "ticket-campo" -> "campo"
-      const sector = SECTORS.find((s) => s.id === sectorName);
-      if (sector && !sector.soldOut) {
-        return sectorName;
+  // Load event detail from test database to inherit event info and tickets/sectors
+  const eventData = useMemo(() => (eventId ? getEventDetailById(eventId) : undefined), [eventId]);
+
+  // Derive sectors from event data (prefer explicit sectors, fallback to tickets)
+  const sectors: Sector[] = useMemo(() => {
+    const list: Sector[] = [];
+    if (eventData && Array.isArray(eventData.sectors) && eventData.sectors.length > 0) {
+      for (const s of eventData.sectors as any[]) {
+        list.push({
+          id: String((s.id ?? s.name ?? Math.random()).toString()),
+          name: String(s.name ?? s.label ?? "SECTOR"),
+          price: Number(s.price ?? s.amount ?? 0),
+          soldOut: Boolean(s.isSoldOut ?? s.soldOut ?? false),
+        });
+      }
+    } else if (eventData && Array.isArray(eventData.tickets) && eventData.tickets.length > 0) {
+      // Group tickets by type/sector name to approximate sectors
+      for (const t of eventData.tickets as any[]) {
+        const id = String(t.sectorId ?? t.type ?? t.name ?? t.id ?? Math.random());
+        const existing = list.find((s) => s.id === id);
+        const price = Number(t.price ?? t.amount ?? 0);
+        const soldOut = Boolean(t.isSoldOut ?? !t.available);
+        const name = String(t.type ?? t.name ?? "SECTOR");
+        if (!existing) {
+          list.push({ id, name, price, soldOut });
+        } else {
+          // If multiple tickets map to same sector, take min price, and soldOut only if all are sold out
+          existing.price = existing.price ? Math.min(existing.price, price) : price;
+          existing.soldOut = existing.soldOut && soldOut;
+        }
       }
     }
-    return "campo"; // default fallback
+    return list;
+  }, [eventData]);
+
+  // Choose initial sector: try to match selected ticket to sector; otherwise first available
+  const getInitialSectorId = () => {
+    if (selectedTicketId && eventData && Array.isArray(eventData.tickets)) {
+      const t = (eventData.tickets as any[]).find((tk) => String(tk.id) === String(selectedTicketId));
+      if (t) {
+        const matchId = String(t.sectorId ?? t.type ?? t.name ?? "");
+        const sector = sectors.find((s) => s.id === matchId);
+        if (sector && !sector.soldOut) return matchId;
+      }
+    }
+    const firstAvailable = sectors.find((s) => !s.soldOut);
+    return firstAvailable ? firstAvailable.id : (sectors[0]?.id ?? "");
   };
 
   const [ticketCount, setTicketCount] = useState(1);
   const [selectedSectorId, setSelectedSectorId] = useState<string>(getInitialSectorId());
 
-  const selectedSector = SECTORS.find((s) => s.id === selectedSectorId);
+  const selectedSector = sectors.find((s) => s.id === selectedSectorId);
   const subtotal = selectedSector ? selectedSector.price * ticketCount : 0;
   const serviceFee = Math.round(subtotal * SERVICE_FEE_PERCENTAGE * 100) / 100;
   const total = subtotal + serviceFee;
@@ -88,11 +120,12 @@ export default function PaymentCheckoutScreen() {
       subtotal,
       serviceFee,
       total,
+      eventId,
     });
   };
 
   const handleSelectSector = (sectorId: string) => {
-    const sector = SECTORS.find((s) => s.id === sectorId);
+    const sector = sectors.find((s) => s.id === sectorId);
     if (sector && !sector.soldOut) {
       setSelectedSectorId(sectorId);
     }
@@ -124,10 +157,10 @@ export default function PaymentCheckoutScreen() {
         showsVerticalScrollIndicator={false}
       >
         <EventInfoCard
-          imageSource={require("@/src/modules/home/assets/cro-concierto.jpg")}
-          title="C.R.O en Concierto"
-          date="11 de Abril, 2025"
-          location="Alice Park"
+          imageSource={eventData?.image ?? require("@/src/modules/home/assets/cro-concierto.jpg")}
+          title={eventData?.title ?? "Evento"}
+          date={eventData?.date ?? ""}
+          location={eventData?.location?.name ?? ""}
         />
 
         <View style={styles.section}>
@@ -142,7 +175,7 @@ export default function PaymentCheckoutScreen() {
         <View style={styles.section}>
           <ThemedText type="h4" style={styles.sectionTitle}>Sectores Disponibles</ThemedText>
           <View style={styles.sectorsContainer}>
-            {SECTORS.map((sector) => (
+            {sectors.map((sector) => (
               <SectorCard
                 key={sector.id}
                 name={sector.name}
@@ -168,7 +201,15 @@ export default function PaymentCheckoutScreen() {
           { paddingBottom: insets.bottom + Spacing.lg },
         ]}
       >
-        <Button onPress={handleConfirm} style={styles.confirmButton} textStyle={styles.confirmButtonText}>
+        <Button
+          onPress={handleConfirm}
+          style={[
+            styles.confirmButton,
+            sectors.every((s) => s.soldOut) ? { opacity: 0.6 } : null,
+          ]}
+          textStyle={styles.confirmButtonText}
+          disabled={sectors.length === 0 || sectors.every((s) => s.soldOut)}
+        >
           CONFIRMAR TICKETS
         </Button>
       </View>

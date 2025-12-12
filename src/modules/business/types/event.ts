@@ -25,8 +25,10 @@ export interface EventFormData {
   dateTime: Date;
   locationName: string;
   googleMapsLink: string;
+  latitude?: number;
+  longitude?: number;
   mapImage: string | null;
   tickets: Ticket[];
-  spotifyPlaylist: string;
+  spotifyUrl: string;
   youtubeVideo: string;
 }

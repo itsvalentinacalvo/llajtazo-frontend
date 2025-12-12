@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
-import { findEventById, findCanonicalEvent } from "@/src/core/data/events";
+import { findEventById, findCanonicalEvent } from "@/src/core/test/events";
 
 export type SavedEventMinimal = {
   id: string;

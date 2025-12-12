@@ -15,7 +15,8 @@ import { ThemedText } from "@/src/core/components/ThemedText";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { BorderRadius, Spacing, Colors, Shadows } from "@/src/core/constants/theme";
 import { useBusiness } from "@/src/modules/business/context/BusinessContext";
-import { BUSINESS_TICKETS, Ticket } from "@/src/modules/business/test/businessData";
+import { Ticket } from "@/src/modules/business/test/businessData";
+import { TEST_DATABASE } from "@/src/core/test/testDatabase";
 import { BusinessStackParamList } from "@/src/modules/business/navigation/BusinessNavigator";
 
 type MetricasRouteProp = RouteProp<BusinessStackParamList, "MetricasDetail">;
@@ -157,9 +158,38 @@ export default function MetricasBusinessScreen() {
   }, [selectedPeriod]);
 
   const eventTickets = useMemo(() => {
-    if (!eventId) return BUSINESS_TICKETS.slice(0, 2);
-    return BUSINESS_TICKETS.filter((t) => t.eventId === eventId);
-  }, [eventId]);
+    if (!eventId) return [] as Ticket[];
+    // Prefer tickets attached to the BusinessEvent (context)
+    if (event && Array.isArray(event.tickets)) {
+      return (event.tickets || []).map((t) => ({
+        id: t.id,
+        eventId: eventId,
+        name: t.name,
+        price: t.price,
+        fee: Math.round(t.price * 0.05 * 100) / 100,
+        stock: t.available ? 100 : 0,
+        soldCount: t.isSoldOut ? (t.available ? 100 : 0) : Math.floor((t.available ? 100 : 0) * 0.6),
+        isFree: t.price === 0,
+        minPerPurchase: 1,
+        maxPerPurchase: 6,
+      })) as Ticket[];
+    }
+    // Fallback: read from TEST_DATABASE for the event id
+    const raw = (TEST_DATABASE.events || []).find((e) => String(e.id) === eventId);
+    const dbTickets: Array<any> = raw && Array.isArray((raw as any).tickets) ? (raw as any).tickets : [];
+    return dbTickets.map((t: any) => ({
+      id: String(t.id),
+      eventId: eventId,
+      name: t.name,
+      price: t.price,
+      fee: Math.round(t.price * 0.05 * 100) / 100,
+      stock: t.available ? 100 : 0,
+      soldCount: t.isSoldOut ? (t.available ? 100 : 0) : Math.floor((t.available ? 100 : 0) * 0.6),
+      isFree: t.price === 0,
+      minPerPurchase: 1,
+      maxPerPurchase: 6,
+    })) as Ticket[];
+  }, [eventId, event]);
 
   const ticketTableData = useMemo(() => {
     return eventTickets.map((ticket) => {
@@ -175,8 +205,8 @@ export default function MetricasBusinessScreen() {
     });
   }, [eventTickets]);
 
-  const totalSales = event?.totalSales || 326600;
-  const ticketsSold = event?.ticketsSold || 26600;
+  const totalSales = event?.totalSales ?? 0;
+  const ticketsSold = event?.ticketsSold ?? 0;
 
   const handlePreviewPress = () => {
     if (eventId) {

@@ -9,7 +9,7 @@ import { MapContainer, MapContainerRef } from "../components/MapContainer";
 import { MapEventsCards } from "../components/MapEventsCards";
 import { GoogleMapsButton } from "../components/GoogleMapsButton";
 import { MAP_EVENTS, MapEvent, CATEGORY_CONFIG } from "../constants/mapEvents";
-import { findEventById } from "@/src/core/data/events";
+import { findEventById } from "@/src/core/test/events";
 import { useSavedEvents } from "@/src/core/context/SavedEventsContext";
 import { Spacing } from "@/src/core/constants/theme";
 import type { MapaStackParamList } from "../navigation/stacks/MapaStack";
@@ -27,7 +27,17 @@ export default function MapaScreen() {
   const { selectedCategory } = useHomeHeader();
   const { isSaved, toggleSaved } = useSavedEvents();
 
-  const allEventsWithSaved = MAP_EVENTS.map((e) => ({
+  // Use a single representative event per location to test map pins
+  const uniqueByLocation: Record<string, boolean> = {};
+  const uniqueEvents = MAP_EVENTS.filter((e) => {
+    const key = (e.location || "")?.toLowerCase();
+    if (!key) return true;
+    if (uniqueByLocation[key]) return false;
+    uniqueByLocation[key] = true;
+    return true;
+  });
+
+  const allEventsWithSaved = uniqueEvents.map((e) => ({
     ...e,
     // Prefer canonical event id when checking saved state
     isSaved: isSaved(e.eventId ?? e.id),

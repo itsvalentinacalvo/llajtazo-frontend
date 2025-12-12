@@ -12,6 +12,23 @@ export interface BusinessEvent {
   ticketsSold: number;
   status: "active" | "finished" | "upcoming";
   tags: string[];
+  // Extended optional fields to persist preview data after publish
+  descriptionHTML?: string;
+  googleMapsLink?: string;
+  spotifyUrl?: string;
+  dayOfWeekLabel?: string;
+  sectorImage?: ImageSourcePropType;
+  startTimeIso?: string;
+  latitude?: number;
+  longitude?: number;
+  tickets?: Array<{
+    id: string;
+    name: string;
+    price: number;
+    currency?: string;
+    available?: boolean;
+    isSoldOut?: boolean;
+  }>;
 }
 
 export interface Ticket {
@@ -77,7 +94,7 @@ export const BUSINESS_EVENTS: BusinessEvent[] = [
     subtitle: "World Tour 2025",
     date: "11 DE ABRIL",
     time: "10:00 PM",
-    image: require("@/src/core/assets/events/alice-park/event2.png") as ImageSourcePropType,
+    image: require("@/src/core/assets/events/alice-park/event6.jpg") as ImageSourcePropType,
     location: "Alice Park",
     totalSales: 23453.4,
     ticketsSold: 1342,
@@ -187,25 +204,6 @@ export const SALES_DATA_MONTHLY: SalesMetric[] = [
   { month: "Oct", sales: 78000 },
   { month: "Nov", sales: 88000 },
   { month: "Dic", sales: 95000 },
-];
-
-export const ORGANIZER_REVIEWS: Review[] = [
-  {
-    id: "rev_001",
-    userName: "Rocks Velkeinjen",
-    userAvatar: require("@/src/core/test/assets/user-profile.png") as ImageSourcePropType,
-    rating: 4,
-    comment: "Cinemas is the ultimate experience to see new movies in Gold Class or Vmax. Find a cinema near you.",
-    date: "10 Feb",
-  },
-  {
-    id: "rev_002",
-    userName: "Angelina Zolly",
-    userAvatar: require("@/src/core/test/assets/user-profile.png") as ImageSourcePropType,
-    rating: 4,
-    comment: "Cinemas is the ultimate experience to see new movies in Gold Class or Vmax.",
-    date: "10 Feb",
-  },
 ];
 
 export const BUSINESS_TEST_CREDENTIALS = {

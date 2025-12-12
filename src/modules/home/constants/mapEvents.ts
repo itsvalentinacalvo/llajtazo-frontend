@@ -61,78 +61,55 @@ export const CATEGORY_CONFIG: Record<
   },
 };
 
-export const MAP_EVENTS: MapEvent[] = [
-  {
-    id: "1",
-    title: "C.R.O en Concierto",
-    location: "Alice Park",
-    date: "Mar, 11 de Abril",
-    time: "9:00 PM",
-    category: "musica",
-    image: require("../assets/cro-concierto.jpg"),
-    coordinate: {
-      latitude: -17.376840542371554,
-      longitude: -66.14984506062555,
-    },
+import { EVENTS_MASTER } from "@/src/core/test/events";
+import { TEST_DATABASE } from "@/src/core/test/testDatabase";
+
+function normalize(s?: string) {
+  return (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
+}
+
+function formatDateString(startIso?: string): string {
+  if (!startIso) return "";
+  const dt = new Date(startIso);
+  const day = dt.toLocaleDateString("es-ES", { weekday: "short" });
+  const dayNum = dt.getDate().toString().padStart(2, "0");
+  const month = dt.toLocaleDateString("es-ES", { month: "long" });
+  // e.g., "vie, 11 de abril" (capitalization handled by UI in some places)
+  return `${day}, ${dayNum} de ${month}`;
+}
+
+function formatTimeString(startIso?: string): string {
+  if (!startIso) return "";
+  const dt = new Date(startIso);
+  return dt.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+}
+
+// Build MAP_EVENTS from TEST_DATABASE canonical events, enriching with coordinates
+export const MAP_EVENTS: MapEvent[] = EVENTS_MASTER.map((ev) => {
+  // Find the raw DB event by normalized title
+  const raw = (TEST_DATABASE.events || []).find((e) => normalize(e.titulo) === normalize(ev.title));
+  const lugar = raw ? (TEST_DATABASE.lugares || []).find((l) => l.id === raw.lugar_id) : undefined;
+  const latitude = (lugar as any)?.latitud ?? 0;
+  const longitude = (lugar as any)?.longitud ?? 0;
+  const startIso = raw?.start_time as string | undefined;
+  const dateStr = formatDateString(startIso);
+  const timeStr = formatTimeString(startIso);
+
+  // Fallback to an existing local asset if the DB image is missing
+  const image = ev.image ?? require("../assets/levitar.png");
+
+  const category: EventCategory = "musica"; // default; could be refined from DB if available
+
+  return {
+    id: ev.id,
+    title: ev.title,
+    location: ev.location || lugar?.nombre || "",
+    date: dateStr,
+    time: timeStr,
+    category,
+    image,
+    coordinate: { latitude, longitude },
     isSaved: false,
-    eventId: "cro",
-  },
-  {
-    id: "2",
-    title: "Noche de Jazz & Blues",
-    location: "NOMA",
-    date: "Vie, 14 de Abril",
-    time: "8:30 PM",
-    category: "musica",
-    image: require("../assets/modo-cumbia.png"),
-    coordinate: {
-      latitude: -17.37555046769994,
-      longitude: -66.14948750706401,
-    },
-    // This map marker references the canonical `noche-musica` event when available
-    eventId: "noche-musica",
-  },
-  {
-    id: "3",
-    title: "Oktoberfest Cochabamba",
-    location: "Beertown",
-    date: "Sab, 15 de Abril",
-    time: "6:00 PM",
-    category: "ferias",
-    image: require("../assets/oktober-fest.png"),
-    coordinate: {
-      latitude: -17.37620972181715,
-      longitude: -66.14992980847333,
-    },
-    eventId: "oktober-fest",
-  },
-  {
-    id: "4",
-    title: "Exposición de Arte Moderno",
-    location: "Galería Centenario",
-    date: "Vie, 21 de Abril",
-    time: "7:00 PM",
-    category: "arte",
-    image: require("../assets/pink-friday.png"),
-    coordinate: {
-      latitude: -17.372599255409582,
-      longitude: -66.14932669380501,
-    },
-    // no canonical event currently; left unlinked
-  },
-  {
-    id: "5",
-    title: "Festival Cultural Boliviano",
-    location: "Plaza Principal",
-    date: "Dom, 23 de Abril",
-    time: "5:00 PM",
-    category: "cultura",
-    image: require("../assets/levitar.png"),
-    coordinate: {
-      latitude: -17.375874961937384,
-      longitude: -66.14949387280934,
-    },
-    // link to `levitar` canonical event
-    eventId: "levitar",
-  },
-];
+    eventId: ev.id,
+  } as MapEvent;
+}).filter((m) => !!m.location);

@@ -12,7 +12,7 @@ import SocialButton from "@/src/modules/auth/components/SocialButton";
 import Divider from "@/src/modules/auth/components/Divider";
 import { ScreenKeyboardAwareScrollView } from "@/src/core/components/ScreenKeyboardAwareScrollView";
 import { Colors, Spacing, Typography } from "@/src/core/constants/theme";
-import { BUSINESS_TEST_CREDENTIALS } from "@/src/modules/business/test/businessData";
+import { TEST_DATABASE } from "@/src/core/test/testDatabase";
 import { useStatusBarStyle } from "@/src/core/context/StatusBarContext";
 import { useBusiness } from "@/src/modules/business/context/BusinessContext";
 
@@ -67,10 +67,10 @@ export default function LoginBusinessScreen({ onAuthSuccess }: { onAuthSuccess?:
     }
 
     if (!newErrors.email && !newErrors.password) {
-      const emailMatches = email.toLowerCase() === BUSINESS_TEST_CREDENTIALS.email.toLowerCase();
-      const passwordMatches = password === BUSINESS_TEST_CREDENTIALS.password;
-
-      if (!emailMatches || !passwordMatches) {
+      const organizer = (TEST_DATABASE.organizadores || []).find(
+        (o) => o.email?.toLowerCase() === email.toLowerCase() && o.password === password
+      );
+      if (!organizer) {
         newErrors.general = "Correo o contraseña incorrectos";
         fieldsToShake.push("email", "password");
       }
@@ -91,8 +91,14 @@ export default function LoginBusinessScreen({ onAuthSuccess }: { onAuthSuccess?:
     console.log("[LoginBusiness] Pressed. email=", email, "rememberMe=", rememberMe);
     if (validateForm()) {
       console.log("[LoginBusiness] Validation passed");
+      const organizer = (TEST_DATABASE.organizadores || []).find(
+        (o) => o.email?.toLowerCase() === email.toLowerCase() && o.password === password
+      );
+      const organizerId = organizer?.id;
       const finalize = () => {
-        loginBusiness();
+        if (organizerId != null) {
+          loginBusiness(organizerId);
+        }
         if (onAuthSuccess) {
           console.log("[LoginBusiness] animation complete -> calling onAuthSuccess");
           onAuthSuccess();

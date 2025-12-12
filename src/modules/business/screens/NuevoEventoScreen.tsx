@@ -31,17 +31,19 @@ import { useTheme } from "@/src/core/hooks/useTheme";
 import { Spacing, BorderRadius, Colors } from "@/src/core/constants/theme";
 import { interests } from "@/src/modules/auth/screens/InterestsScreen";
 import { ImageAdjustments } from "@/src/modules/business/components/ImageAdjustments";
-import { RICHEDITTEXT } from "@/src/modules/business/components/RichEditText";
+import RICHEDITTEXT, { RICHEDITTEXTRef } from "@/src/modules/business/components/RichEditText";
 import {
   EventFormData,
   EventImageData,
   Ticket,
 } from "@/src/modules/business/types/event";
+import { MiniMapPicker } from "@/src/modules/business/components/MiniMapPicker";
 import {
   EVENT_IMAGE_FRAME_HEIGHT,
   clamp,
   getImageMetrics,
 } from "@/src/modules/business/utils/imageAdjustment";
+import { buildEventDetailFromForm, OrganizerLite } from "@/src/core/test/eventDetailData";
 
 const eventTags = interests
   .filter((i) => !i.isHidden)
@@ -71,6 +73,8 @@ export default function NuevoEventoScreen() {
   const [showImageAdjuster, setShowImageAdjuster] = useState(false);
 
   const modalTranslateY = useRef(new Animated.Value(0)).current;
+  const editorRef = useRef<RICHEDITTEXTRef | null>(null);
+
 
   const [formData, setFormData] = useState<EventFormData>({
     eventImage: null,
@@ -81,9 +85,11 @@ export default function NuevoEventoScreen() {
     dateTime: new Date(),
     locationName: "",
     googleMapsLink: "",
+    latitude: undefined,
+    longitude: undefined,
     mapImage: null,
     tickets: [],
-    spotifyPlaylist: "",
+    spotifyUrl: "",
     youtubeVideo: "",
   });
 
@@ -170,21 +176,42 @@ export default function NuevoEventoScreen() {
 
   useEffect(() => {
     if (!isEditMode || !existingEvent) return;
-    
+
+    const startTimeIso = (existingEvent as any).startTimeIso as string | undefined;
+    const descriptionHTML = (existingEvent as any).descriptionHTML as string | undefined;
+    const spotifyEmbedUrl = (existingEvent as any).spotifyEmbedUrl as string | undefined;
+    const spotifyPlaylistUrl = (existingEvent as any).spotifyPlaylist as string | undefined;
+    const googleMapsLink = (existingEvent as any).googleMapsLink as string | undefined;
+    const latitude = (existingEvent as any).latitude as number | undefined;
+    const longitude = (existingEvent as any).longitude as number | undefined;
+    const sectorImage = (existingEvent as any).sectorImage as { uri?: string } | undefined;
+    const tickets = (existingEvent.tickets || []).map((t) => ({
+      id: t.id,
+      name: t.name,
+      price: t.price,
+      fee: 0,
+      stock: t.available ? 100 : 0,
+      isPaid: (t.price || 0) > 0,
+      minPerPurchase: 1,
+      maxPerPurchase: 10,
+    }));
+
     setFormData({
-      eventImage: typeof existingEvent.image === "object" && "uri" in existingEvent.image 
+      eventImage: typeof existingEvent.image === "object" && "uri" in existingEvent.image
         ? { uri: (existingEvent.image as { uri: string }).uri, width: 0, height: 0, offsetY: 0 }
         : null,
       title: existingEvent.title,
       subtitle: existingEvent.subtitle || "",
-      details: "",
+      details: descriptionHTML || "",
       tags: existingEvent.tags || [],
-      dateTime: new Date(),
+      dateTime: startTimeIso ? new Date(startTimeIso) : new Date(),
       locationName: existingEvent.location || "",
-      googleMapsLink: "",
-      mapImage: null,
-      tickets: [],
-      spotifyPlaylist: "",
+      googleMapsLink: googleMapsLink || "",
+      latitude,
+      longitude,
+      mapImage: sectorImage && "uri" in sectorImage ? (sectorImage as any).uri : null,
+      tickets,
+      spotifyUrl: spotifyPlaylistUrl || spotifyEmbedUrl || "",
       youtubeVideo: "",
     });
   }, [isEditMode, existingEvent]);
@@ -205,8 +232,11 @@ export default function NuevoEventoScreen() {
     const hasPermission = await requestMediaPermission();
     if (!hasPermission) return;
 
+    const mediaType = (ImagePicker as any).MediaType?.IMAGES
+      ? [(ImagePicker as any).MediaType.IMAGES]
+      : ImagePicker.MediaTypeOptions.Images;
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: mediaType,
       allowsEditing: false,
       quality: 0.8,
     });
@@ -238,8 +268,11 @@ export default function NuevoEventoScreen() {
     const hasPermission = await requestMediaPermission();
     if (!hasPermission) return;
 
+    const mediaType2 = (ImagePicker as any).MediaType?.IMAGES
+      ? [(ImagePicker as any).MediaType.IMAGES]
+      : ImagePicker.MediaTypeOptions.Images;
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: mediaType2,
       allowsEditing: false,
       quality: 0.8,
     });
@@ -381,14 +414,64 @@ export default function NuevoEventoScreen() {
         image: formData.eventImage?.uri 
           ? { uri: formData.eventImage.uri } 
           : existingEvent?.image,
-      });
+        // pass through spotify for preview/edit screens
+        spotifyUrl: formData.spotifyUrl || (existingEvent as any)?.spotifyUrl || "",
+        // persist coordinates and maps link so Preview/EventDetail can render MiniMap
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        googleMapsLink: formData.googleMapsLink,
+      } as any);
       
       Alert.alert("Evento actualizado", "Los cambios han sido guardados.", [
         { text: "OK", onPress: () => navigation.goBack() }
       ]);
     } else {
-      const draftEvent = addDraftEvent(formData);
-      navigation.navigate("PreviewEvent", { draftId: draftEvent.id });
+      // Build EventDetail for preview using the form data and organizer context
+      try {
+        const organizer: OrganizerLite = {
+          id: 502,
+          name: "Alice Park",
+          avatar: require("@/src/core/assets/events/alice-park/profile.jpg"),
+        };
+
+        const eventDetail = buildEventDetailFromForm(
+          {
+            id: eventId,
+            title: formData.title,
+            subtitle: formData.subtitle,
+            detailsHtml: formData.details, // rich HTML from editor, includes age/reembolso
+            dateTime: formData.dateTime,
+            eventImage: formData.eventImage ? { uri: formData.eventImage.uri, width: formData.eventImage.width, height: formData.eventImage.height, offsetY: formData.eventImage.offsetY } : null,
+            locationName: formData.locationName,
+            locationAddress: "",
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+            tickets: (formData.tickets || []).map((t) => ({
+              id: t.id,
+              name: t.name,
+              price: t.price,
+              currency: "Bs.",
+              available: true,
+            })),
+            spotifyPlaylist: formData.spotifyUrl,
+            category: "musica",
+            // tags preserved for EventDetail
+            // @ts-ignore
+            tags: formData.tags,
+            // include Google Maps link for preview
+            // @ts-ignore
+            googleMapsLink: formData.googleMapsLink,
+          },
+          organizer
+        );
+
+        // Navigate to preview screen with the built detail
+        // Adjust route name/params to your navigator setup if needed
+        // @ts-ignore
+        navigation.navigate("PreviewEvent", { eventDetail });
+      } catch (e) {
+        console.warn("Failed to build event detail", e);
+      }
     }
   };
 
@@ -531,17 +614,16 @@ export default function NuevoEventoScreen() {
 
       <ThemedText style={styles.label}>Detalles del evento</ThemedText>
       <RICHEDITTEXT
+        ref={editorRef}
         value={formData.details}
         onChange={(html) =>
-          setFormData((prev) => ({
-            ...prev,
-            details: html,
-          }))
+          setFormData((prev) => ({ ...prev, details: html }))
         }
         placeholder="Escribe los detalles del evento..."
         theme={theme}
         editorStyle={styles.eventDetailsEditor as ViewStyle}
       />
+
 
       <ThemedText style={styles.label}>
         Etiquetas<ThemedText style={styles.required}>*</ThemedText>
@@ -636,16 +718,13 @@ export default function NuevoEventoScreen() {
       />
 
       <ThemedText style={styles.label}>Enlace a Google Maps</ThemedText>
-      <TextInput
-        style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
-        value={formData.googleMapsLink}
-        onChangeText={(text) => setFormData((prev) => ({ ...prev, googleMapsLink: text }))}
-        placeholder=""
-        placeholderTextColor={theme.textSecondary}
-        keyboardType="url"
-        autoCapitalize="none"
+      <MiniMapPicker
+        latitude={formData.latitude}
+        longitude={formData.longitude}
+        onChange={(lat, lng) => {
+          setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng, googleMapsLink: `https://www.google.com/maps?q=${lat},${lng}` }));
+        }}
       />
-
       <ThemedText style={styles.label}>Mapa General</ThemedText>
       <Pressable
         style={[styles.uploadButton, { borderColor: Colors.light.primary }]}
@@ -678,6 +757,7 @@ export default function NuevoEventoScreen() {
 
   const renderStep2 = () => (
     <>
+      {/* existing Step 2 UI omitted in snippet */}
       <ThemedText style={styles.label}>
         Crear Tickets <ThemedText style={styles.required}>*</ThemedText>
       </ThemedText>
@@ -722,8 +802,8 @@ export default function NuevoEventoScreen() {
       <ThemedText style={[styles.label, { marginTop: Spacing.xl }]}>Playlist de Spotify</ThemedText>
       <TextInput
         style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
-        value={formData.spotifyPlaylist}
-        onChangeText={(text) => setFormData((prev) => ({ ...prev, spotifyPlaylist: text }))}
+        value={formData.spotifyUrl}
+        onChangeText={(text) => setFormData((prev) => ({ ...prev, spotifyUrl: text }))}
         placeholder=""
         placeholderTextColor={theme.textSecondary}
         autoCapitalize="none"

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { View, StyleSheet, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -17,6 +17,7 @@ import {
 import { EventInfoCard } from "@/src/modules/payment/components/EventInfoCard";
 import { TotalAmountCard } from "@/src/modules/payment/components/TotalAmountCard";
 import { PaymentMethodCard } from "@/src/modules/payment/components/PaymentMethodCard";
+import { getEventDetailById } from "@/src/core/test/eventDetailData";
 
 interface PaymentMethod {
   id: string;
@@ -46,12 +47,23 @@ export default function PaymentMethodScreen() {
   const navigation = useNavigation();
   const route = useRoute<any>();
 
-  // accept forwarded params from Checkout (ticketCount, subtotal, serviceFee, total, selectedTicketId)
+  // accept forwarded params from Checkout (ticketCount, subtotal, serviceFee, total, selectedTicketId, eventId)
   const total = route.params?.total ?? 0;
   const ticketCount = Number(route.params?.ticketCount) || 1;
   const subtotal = Number(route.params?.subtotal) || 0;
   const serviceFee = Number(route.params?.serviceFee) || 0;
   const selectedTicketId = route.params?.selectedTicketId;
+  const eventId = route.params?.eventId;
+
+  const eventData = useMemo(() => (eventId ? getEventDetailById(eventId) : undefined), [eventId]);
+  // Prepare event display payload to forward downstream explicitly
+  const eventPayload = useMemo(() => ({
+    title: eventData?.title ?? "",
+    venue: eventData?.location?.name ?? "",
+    date: eventData?.date ?? "",
+    time: eventData?.time ?? "",
+    image: eventData?.image as any,
+  }), [eventData]);
 
   const [selectedMethodId, setSelectedMethodId] = useState<string>("qr");
 
@@ -70,6 +82,13 @@ export default function PaymentMethodScreen() {
         subtotal,
         serviceFee,
         total,
+        eventId,
+        methodId: selectedMethodId,
+        eventTitle: eventPayload.title,
+        eventVenue: eventPayload.venue,
+        eventDate: eventPayload.date,
+        eventTime: eventPayload.time,
+        eventImage: eventPayload.image,
       });
       return;
     }
@@ -81,6 +100,13 @@ export default function PaymentMethodScreen() {
         subtotal,
         serviceFee,
         total,
+        eventId,
+        methodId: selectedMethodId,
+        eventTitle: eventPayload.title,
+        eventVenue: eventPayload.venue,
+        eventDate: eventPayload.date,
+        eventTime: eventPayload.time,
+        eventImage: eventPayload.image,
       });
       return;
     }
@@ -112,10 +138,10 @@ export default function PaymentMethodScreen() {
         showsVerticalScrollIndicator={false}
       >
         <EventInfoCard
-          imageSource={require("@/src/modules/home/assets/cro-concierto.jpg")}
-          title="C.R.O en Concierto"
-          date="11 de Abril, 2025"
-          location="Alice Park"
+          imageSource={eventData?.image ?? require("@/src/modules/home/assets/cro-concierto.jpg")}
+          title={eventData?.title ?? "Evento"}
+          date={eventData?.date ?? ""}
+          location={eventData?.location?.name ?? ""}
         />
 
         <View style={styles.section}>

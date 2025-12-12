@@ -13,15 +13,15 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { BorderRadius, Spacing, Colors, Shadows } from "@/src/core/constants/theme";
-import ExpandableText from "@/src/modules/home/components/ExpandableText";
+import { RichTextRenderer } from "@/src/modules/events/components/RichTextRenderer";
 import { SpotifyEmbed } from "../components/SpotifyEmbed";
 import { SectorMap } from "../components/SectorMap";
 import { TicketSelector } from "../components/TicketSelector";
 import { MiniMap } from "../components/MiniMap";
 import { ShareTab } from "@/src/core/components/ShareTab";
 import { BuyTicketButton } from "../components/BuyTicketButton";
-import { getEventDetailById } from "@/src/core/test/eventData";
-import { findEventById, findCanonicalEvent } from "@/src/core/data/events";
+import { getEventDetailById } from "@/src/core/test/eventDetailData";
+import { findEventById, findCanonicalEvent } from "@/src/core/test/events";
 
 type EventDetailRouteProp = RouteProp<{ EventDetail: { eventId: string } }, "EventDetail">;
 
@@ -225,32 +225,20 @@ export default function EventDetailScreen() {
             </Pressable>
           </View>
 
-          <BuyTicketButton style={styles.buyButton} />
+          {Array.isArray(eventData.tickets) && eventData.tickets.some((t) => t.available && !t.isSoldOut) && (
+            <BuyTicketButton style={styles.buyButton} selectedTicketId={selectedTicketId} eventId={eventId} />
+          )}
 
-          <View style={[styles.section, styles.sectionCompact]}>
-            <ThemedText type="h4" style={styles.sectionTitle}>Escuchalo</ThemedText>
-            <SpotifyEmbed embedUrl={eventData.spotifyPlaylist.embedUrl} />
-          </View>
+          {Boolean(eventData.spotifyPlaylist?.embedUrl) && (
+            <View style={[styles.section, styles.sectionCompact]}>
+              <ThemedText type="h4" style={styles.sectionTitle}>Escuchalo</ThemedText>
+              <SpotifyEmbed embedUrl={eventData.spotifyPlaylist.embedUrl} />
+            </View>
+          )}
 
           <View style={styles.section}>
             <ThemedText type="h4" style={styles.sectionTitle}>Detalles</ThemedText>
-            <ExpandableText
-              text={eventData.description}
-              maxChars={300}
-              visibleChars={180}
-            />
-            <View style={styles.restrictionRow}>
-              <Ionicons name="warning-outline" size={16} color={theme.textSecondary} />
-              <ThemedText style={[styles.restrictionText, { color: theme.textSecondary }]}>
-                {eventData.ageRestriction}
-              </ThemedText>
-            </View>
-            <View style={styles.refundRow}>
-              <MaterialCommunityIcons name="currency-usd-off" size={16} color={theme.textSecondary} />
-              <ThemedText style={[styles.refundText, { color: theme.textSecondary }]}>
-                {eventData.refundPolicy}
-              </ThemedText>
-            </View>
+            <RichTextRenderer html={eventData.description} color={theme.text} />
           </View>
 
           <View style={styles.section}>
@@ -274,20 +262,24 @@ export default function EventDetailScreen() {
             </View>
           </View>
 
-          <View style={styles.section}>
-            <ThemedText type="h4" style={styles.sectionTitle}>Mapa de sectores</ThemedText>
-            <SectorMap sectors={eventData.sectors} />
-          </View>
+          {Array.isArray(eventData.sectors) && eventData.sectors.length > 0 && (
+            <View style={styles.section}>
+              <ThemedText type="h4" style={styles.sectionTitle}>Mapa de sectores</ThemedText>
+              <SectorMap sectors={eventData.sectors} />
+            </View>
+          )}
 
-          <View style={[styles.section, styles.sectionTickets]}>
-            <ThemedText type="h4" style={styles.sectionTitle}>Tickets Disponibles</ThemedText>
-            <TicketSelector
-              tickets={eventData.tickets}
-              selectedTicketId={selectedTicketId}
-              onSelectTicket={setSelectedTicketId}
-            />
-            <BuyTicketButton style={[styles.buyButton, styles.buyButtonSecondary]} selectedTicketId={selectedTicketId} eventId={eventId} />
-          </View>
+          {Array.isArray(eventData.tickets) && eventData.tickets.length > 0 && (
+            <View style={[styles.section, styles.sectionTickets]}>
+              <ThemedText type="h4" style={styles.sectionTitle}>Tickets Disponibles</ThemedText>
+              <TicketSelector
+                tickets={eventData.tickets}
+                selectedTicketId={selectedTicketId}
+                onSelectTicket={setSelectedTicketId}
+              />
+              <BuyTicketButton style={[styles.buyButton, styles.buyButtonSecondary]} selectedTicketId={selectedTicketId} eventId={eventId} />
+            </View>
+          )}
         </View>
       </ScrollView>
 

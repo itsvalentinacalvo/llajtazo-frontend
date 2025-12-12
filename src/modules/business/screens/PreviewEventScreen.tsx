@@ -5,6 +5,7 @@ import {
   ScrollView,
   Pressable,
   Alert,
+  Linking,
 } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,14 +16,19 @@ import { ThemedText } from "@/src/core/components/ThemedText";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { BorderRadius, Spacing, Colors, Shadows } from "@/src/core/constants/theme";
 import ExpandableText from "@/src/modules/home/components/ExpandableText";
+import { RichTextRenderer } from "@/src/modules/events/components/RichTextRenderer";
 import { SpotifyEmbed } from "@/src/modules/events/components/SpotifyEmbed";
 import { TicketSelector } from "@/src/modules/events/components/TicketSelector";
 import { getDraftEventById, updateDraftEventStatus } from "@/src/core/test/testDatabase";
 import { interests } from "@/src/modules/auth/screens/InterestsScreen";
 import { useBusiness } from "@/src/modules/business/context/BusinessContext";
 import { BusinessEvent } from "@/src/modules/business/test/businessData";
+import { TEST_DATABASE } from "@/src/core/test/testDatabase";
+import type { EventDetail } from "@/src/core/test/eventDetailData";
+import { getEventDetailById } from "@/src/core/test/eventDetailData";
+import { MiniMap } from "@/src/modules/events/components/MiniMap";
 
-type PreviewEventRouteProp = RouteProp<{ PreviewEvent: { draftId?: string; eventId?: string } }, "PreviewEvent">;
+type PreviewEventRouteProp = RouteProp<{ PreviewEvent: { draftId?: string; eventId?: string; eventDetail?: EventDetail } }, "PreviewEvent">;
 
 export default function PreviewEventScreen() {
   const navigation = useNavigation();
@@ -30,11 +36,75 @@ export default function PreviewEventScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { organizer, addEvent, events } = useBusiness();
+  try {
+    console.log("[PreviewEvent] Route params:", {
+      draftId: route.params?.draftId,
+      eventId: route.params?.eventId,
+      hasDetail: Boolean(route.params?.eventDetail),
+    });
+  } catch {}
   
   const draftId = route.params?.draftId || "";
   const eventId = route.params?.eventId || "";
+  const detail = route.params?.eventDetail;
   const draftEvent = getDraftEventById(draftId);
-  const businessEvent = events.find((e) => e.id === eventId);
+  let businessEvent = events.find((e) => e.id === eventId);
+  // Resolve full EventDetail when only eventId is provided
+  let eventDetailFromDb: EventDetail | undefined = undefined;
+  if (!detail && eventId) {
+    const raw = (TEST_DATABASE.events || []).find((e) => String(e.id) === eventId);
+    const slug: string | undefined = (raw as any)?.slug;
+    if (slug) {
+      eventDetailFromDb = getEventDetailById(slug) || undefined;
+    }
+  }
+  // Unified detail: prefer route detail, else resolved from DB
+  const effectiveDetail: EventDetail | undefined = detail || eventDetailFromDb;
+  // Fallback: if context isn't populated yet, build BusinessEvent from TEST_DATABASE
+  if (!businessEvent && eventId) {
+    const raw = (TEST_DATABASE.events || []).find((e) => String(e.id) === eventId);
+    if (raw) {
+      const place = (TEST_DATABASE.lugares || []).find((l) => l.id === raw.lugar_id);
+      const dt = new Date(raw.start_time);
+      const day = dt.getDate().toString();
+      const monthsAbbr = ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"];
+      const month = monthsAbbr[dt.getMonth()];
+      const date = `${day} ${month}`;
+      const time = dt.toLocaleTimeString("es-ES", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
+      // Tickets may be defined inside event detail data or a separate structure; guard for absence
+      const ticketsForEvent: Array<any> = Array.isArray((TEST_DATABASE as any).tickets)
+        ? ((TEST_DATABASE as any).tickets as Array<any>).filter((t: any) => t.evento_id === raw.id)
+        : [];
+      const ticketsSold = ticketsForEvent.reduce((acc: number, t: any) => acc + (t.soldCount || 0), 0);
+      const totalSales = ticketsForEvent.reduce((acc: number, t: any) => acc + ((t.precio || 0) * (t.soldCount || 0)), 0);
+      businessEvent = {
+        id: String(raw.id),
+        title: raw.titulo,
+        subtitle: raw.subtitulo || "",
+        date,
+        time,
+        image: raw.cover_url,
+        location: place?.nombre || "",
+        latitude: place?.latitud,
+        longitude: place?.longitud,
+        totalSales,
+        ticketsSold,
+        status: "active",
+        tags: [],
+        descriptionHTML: raw.descripcion,
+        googleMapsLink: place ? `https://www.google.com/maps?q=${place.latitud},${place.longitud}` : undefined,
+        startTimeIso: raw.start_time,
+        tickets: ticketsForEvent.map((t: any) => ({
+          id: String(t.id),
+          name: t.nombre,
+          price: t.precio,
+          currency: "Bs.",
+          available: (t.stock || 0) > 0,
+          isSoldOut: (t.stock || 0) === 0,
+        })),
+      };
+    }
+  }
   const isPublishedEvent = Boolean(businessEvent && !draftEvent);
   
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(
@@ -70,10 +140,12 @@ export default function PreviewEventScreen() {
   };
 
   const formatDateForCard = (date: Date) => {
-    const day = date.getDate().toString().padStart(2, "0");
-    const months = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
-    const month = months[date.getMonth()];
-    return `${day} DE ${month}`;
+    // Formato badge: Numero (sin cero a la izquierda) + Mes abreviado (mayúsculas)
+    const day = date.getDate().toString();
+    const monthsAbbr = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+    const month = monthsAbbr[date.getMonth()];
+    // Retornamos en una sola cadena para el modelo BusinessEvent; la UI de Inicio puede dividir si necesita
+    return `${day} ${month}`;
   };
 
   const formatTimeForCard = (date: Date) => {
@@ -85,7 +157,8 @@ export default function PreviewEventScreen() {
   };
 
   const handlePublish = () => {
-    if (!draftEvent) return;
+    // Allow publishing from draftEvent or from eventDetail-based preview
+    if (!draftEvent && !detail) return;
     
     Alert.alert(
       "Publicar evento",
@@ -96,44 +169,109 @@ export default function PreviewEventScreen() {
           text: "Publicar",
           onPress: () => {
             setIsPublishing(true);
-            updateDraftEventStatus(draftId, "published");
+            try {
+              updateDraftEventStatus(draftId, "published");
+            } catch (err) {
+              console.error("[PreviewEvent] Error actualizando estado del borrador a 'published':", err, { draftId });
+            }
             
-            const eventDate = new Date(draftEvent.dateTime);
-            const newBusinessEvent: BusinessEvent = {
-              id: `evt_${Date.now()}`,
-              title: draftEvent.title,
-              subtitle: draftEvent.subtitle || "",
-              date: formatDateForCard(eventDate),
-              time: formatTimeForCard(eventDate),
-              image: draftEvent.eventImage?.uri 
-                ? { uri: draftEvent.eventImage.uri } 
-                : require("@/src/core/assets/events/alice-park/event1.png"),
-              location: draftEvent.locationName,
-              totalSales: 0,
-              ticketsSold: 0,
-              status: "active",
-              tags: draftEvent.tags,
-            };
+            let newBusinessEvent: BusinessEvent;
+            if (draftEvent) {
+              const eventDate = new Date(draftEvent.dateTime);
+              newBusinessEvent = {
+                id: `evt_${Date.now()}`,
+                title: draftEvent.title,
+                subtitle: draftEvent.subtitle || "",
+                date: formatDateForCard(eventDate),
+                time: formatTimeForCard(eventDate),
+                image: draftEvent.eventImage?.uri 
+                  ? { uri: draftEvent.eventImage.uri } 
+                  : require("@/src/core/assets/events/alice-park/event1.png"),
+                location: draftEvent.locationName,
+                totalSales: 0,
+                ticketsSold: 0,
+                status: "active",
+                tags: draftEvent.tags,
+                descriptionHTML: draftEvent.details || "",
+                googleMapsLink: draftEvent.googleMapsLink || "",
+                spotifyUrl: draftEvent.spotifyUrl || "",
+                dayOfWeekLabel: formatDayOfWeek(eventDate),
+                startTimeIso: eventDate.toISOString(),
+                sectorImage: draftEvent.mapImage ? { uri: draftEvent.mapImage } : undefined,
+                tickets: draftEvent.tickets.map((t) => ({
+                  id: t.id,
+                  name: t.name,
+                  price: t.price,
+                  currency: "Bs.",
+                  available: t.stock > 0,
+                  isSoldOut: t.stock === 0,
+                })),
+              };
+            } else if (detail) {
+              newBusinessEvent = {
+                id: `evt_${Date.now()}`,
+                title: detail.title,
+                subtitle: detail.subtitle || "",
+                date: detail.date,
+                time: detail.time,
+                image: detail.image,
+                location: detail.location.name,
+                totalSales: 0,
+                ticketsSold: 0,
+                status: "active",
+                tags: detail.tags || [],
+                descriptionHTML: detail.description || "",
+                googleMapsLink: detail.googleMapsLink || "",
+                spotifyUrl: detail.spotifyPlaylist?.embedUrl || "",
+                dayOfWeekLabel: detail.dayOfWeek || "",
+                tickets: (detail.tickets || []).map((t) => ({
+                  id: t.id,
+                  name: t.name,
+                  price: t.price,
+                  currency: t.currency || "Bs.",
+                  available: t.available,
+                  isSoldOut: t.isSoldOut,
+                })),
+              };
+            } else {
+              return;
+            }
+            if (draftEvent) {
+              try {
+                updateDraftEventStatus(draftId, "published");
+              } catch (err) {
+                console.error("[PreviewEvent] Error re-actualizando estado del borrador:", err, { draftId });
+              }
+            }
             
-            addEvent(newBusinessEvent);
+            try {
+              console.log("[PreviewEvent] Publicando evento con payload:", newBusinessEvent);
+              addEvent(newBusinessEvent);
+            } catch (err) {
+              console.error("[PreviewEvent] Error agregando evento a BusinessContext:", err, { newBusinessEvent });
+            }
             
             Alert.alert("Evento publicado", "Tu evento ha sido publicado exitosamente.", [
               {
                 text: "OK",
                 onPress: () => {
-                  navigation.dispatch(
-                    CommonActions.reset({
-                      index: 0,
-                      routes: [
-                        {
-                          name: "BusinessTabs",
-                          state: {
-                            routes: [{ name: "InicioTab" }],
+                  try {
+                    navigation.dispatch(
+                      CommonActions.reset({
+                        index: 0,
+                        routes: [
+                          {
+                            name: "BusinessTabs",
+                            state: {
+                              routes: [{ name: "InicioTab" }],
+                            },
                           },
-                        },
-                      ],
-                    })
-                  );
+                        ],
+                      })
+                    );
+                  } catch (err) {
+                    console.error("[PreviewEvent] Error navegando tras publicar:", err);
+                  }
                 },
               },
             ]);
@@ -144,7 +282,7 @@ export default function PreviewEventScreen() {
     );
   };
 
-  if (!draftEvent && !businessEvent) {
+  if (!draftEvent && !businessEvent && !detail) {
     return (
       <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
         <View style={[styles.header, { paddingTop: insets.top, backgroundColor: theme.backgroundRoot }]}>
@@ -159,28 +297,60 @@ export default function PreviewEventScreen() {
     );
   }
 
-  const eventDate = draftEvent ? new Date(draftEvent.dateTime) : new Date();
-  const ticketsForSelector = draftEvent ? draftEvent.tickets.map((ticket) => ({
-    id: ticket.id,
-    name: ticket.name,
-    price: ticket.price,
-    currency: "Bs.",
-    available: ticket.stock > 0,
-    isSoldOut: ticket.stock === 0,
-  })) : [];
+  const eventDate = effectiveDetail
+    ? new Date()
+    : draftEvent
+    ? new Date(draftEvent.dateTime)
+    : new Date();
+  const ticketsForSelector = effectiveDetail
+    ? (effectiveDetail.tickets || []).map((ticket) => ({
+        id: ticket.id,
+        name: ticket.name,
+        price: ticket.price,
+        currency: ticket.currency || "Bs.",
+        available: ticket.available,
+        isSoldOut: ticket.isSoldOut,
+      }))
+    : draftEvent
+    ? draftEvent.tickets.map((ticket) => ({
+        id: ticket.id,
+        name: ticket.name,
+        price: ticket.price,
+        currency: "Bs.",
+        available: ticket.stock > 0,
+        isSoldOut: ticket.stock === 0,
+      }))
+    : isPublishedEvent
+    ? ((businessEvent?.tickets || []).map((ticket) => ({
+        id: ticket.id,
+        name: ticket.name,
+        price: ticket.price,
+        currency: ticket.currency || "Bs.",
+        available: Boolean(ticket.available),
+        isSoldOut: Boolean(ticket.isSoldOut),
+      })))
+    : [];
   
-  const displayTitle = isPublishedEvent ? businessEvent?.title : draftEvent?.title;
-  const displaySubtitle = isPublishedEvent ? businessEvent?.subtitle : draftEvent?.subtitle;
-  const displayImage = isPublishedEvent ? businessEvent?.image : draftEvent?.eventImage;
-  const displayLocation = isPublishedEvent ? businessEvent?.location : draftEvent?.locationName;
-  const displayTags = isPublishedEvent ? (businessEvent?.tags || []) : (draftEvent?.tags || []);
-  const attendeesCount = isPublishedEvent ? (businessEvent?.ticketsSold || 0) : 0;
+  const displayTitle = effectiveDetail ? effectiveDetail.title : isPublishedEvent ? businessEvent?.title : draftEvent?.title;
+  const displaySubtitle = effectiveDetail ? effectiveDetail.subtitle : isPublishedEvent ? businessEvent?.subtitle : draftEvent?.subtitle;
+  const displayImage = effectiveDetail ? effectiveDetail.image : isPublishedEvent ? businessEvent?.image : draftEvent?.eventImage;
+  const displayLocation = effectiveDetail ? effectiveDetail.location.name : isPublishedEvent ? businessEvent?.location : draftEvent?.locationName;
+  const displayTags = effectiveDetail ? (effectiveDetail.tags || []) : isPublishedEvent ? (businessEvent?.tags || []) : (draftEvent?.tags || []);
+  const attendeesCount = effectiveDetail ? effectiveDetail.attendeesCount : isPublishedEvent ? (businessEvent?.ticketsSold || 0) : 0;
   
-  const displayDateLabel = isPublishedEvent 
-    ? businessEvent?.date || "" 
+  const displayDateLabel = effectiveDetail
+    ? effectiveDetail.date
+    : isPublishedEvent
+    ? ((businessEvent as any)?.startTimeIso
+        ? formatDate(new Date((businessEvent as any).startTimeIso))
+        : (businessEvent?.date || ""))
     : formatDate(eventDate);
-  const displayTimeLabel = isPublishedEvent 
-    ? businessEvent?.time || "" 
+  const displayTimeLabel = effectiveDetail
+    ? `${effectiveDetail.dayOfWeek}, ${effectiveDetail.time}`
+    : isPublishedEvent
+    ? ((businessEvent as any)?.startTimeIso
+        ? `${formatDayOfWeek(new Date((businessEvent as any).startTimeIso))}, ${formatTime(new Date((businessEvent as any).startTimeIso))}`
+        : ((businessEvent as any)?.dayOfWeekLabel ? `${(businessEvent as any).dayOfWeekLabel}, ${businessEvent?.time || ""}` : (businessEvent?.time || "")))
     : `${formatDayOfWeek(eventDate)}, ${formatTime(eventDate)}`;
   
   const handleEditEvent = () => {
@@ -275,10 +445,16 @@ export default function PreviewEventScreen() {
             </View>
             <View style={styles.infoContent}>
               <ThemedText style={styles.infoLabel}>{displayLocation}</ThemedText>
-              {draftEvent?.googleMapsLink ? (
-                <ThemedText style={[styles.infoSubLabel, { color: theme.textSecondary }]}>
-                  Ver en Google Maps
-                </ThemedText>
+              {(effectiveDetail?.googleMapsLink || draftEvent?.googleMapsLink || (businessEvent as any)?.googleMapsLink) ? (
+                <Pressable onPress={() => {
+                  const url = effectiveDetail?.googleMapsLink || draftEvent?.googleMapsLink || (businessEvent as any)?.googleMapsLink || "";
+                  if (!url) return;
+                  Linking.openURL(url).catch((err) => {
+                    console.error("[PreviewEvent] Error abriendo Google Maps URL:", err, { url });
+                  });
+                }}>
+                  <ThemedText style={[styles.infoSubLabel, { color: theme.textSecondary }]}>Ver en Google Maps</ThemedText>
+                </Pressable>
               ) : null}
             </View>
           </View>
@@ -316,23 +492,40 @@ export default function PreviewEventScreen() {
             </Pressable>
           </View>
 
-          {draftEvent?.spotifyPlaylist ? (
+          {(effectiveDetail?.spotifyPlaylist?.embedUrl || draftEvent?.spotifyUrl || (businessEvent as any)?.spotifyUrl) ? (
             <View style={[styles.section, styles.sectionCompact]}>
               <ThemedText type="h4" style={styles.sectionTitle}>Escuchalo</ThemedText>
-              <SpotifyEmbed embedUrl={draftEvent.spotifyPlaylist} />
+              <SpotifyEmbed embedUrl={effectiveDetail?.spotifyPlaylist?.embedUrl || draftEvent?.spotifyUrl || (businessEvent as any)?.spotifyUrl || ""} />
             </View>
           ) : null}
 
-          {draftEvent?.details ? (
+          {(effectiveDetail?.description || draftEvent?.details || (businessEvent as any)?.descriptionHTML) ? (
             <View style={styles.section}>
               <ThemedText type="h4" style={styles.sectionTitle}>Detalles</ThemedText>
-              <ExpandableText
-                text={draftEvent.details.replace(/<[^>]*>/g, "")}
-                maxChars={300}
-                visibleChars={180}
-              />
+              <RichTextRenderer html={(effectiveDetail?.description || draftEvent?.details || (businessEvent as any)?.descriptionHTML || "")} color={theme.text} />
             </View>
           ) : null}
+
+          <View style={styles.section}>
+            <ThemedText type="h4" style={styles.sectionTitle}>Ubicación</ThemedText>
+            <View style={{ padding: Spacing.md, backgroundColor: "#F9F9F9", borderRadius: BorderRadius.sm }}>
+              <View style={{ flexDirection: "row", alignItems: "flex-start", gap: Spacing.sm }}>
+                <Feather name="map-pin" size={16} color={theme.primary} />
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={{ fontSize: 14, fontWeight: "500" }}>{displayLocation}</ThemedText>
+                  <ThemedText style={[styles.infoSubLabel, { color: theme.textSecondary }]}>
+                    {displayLocation}
+                  </ThemedText>
+                </View>
+              </View>
+              <MiniMap
+                latitude={effectiveDetail?.location?.latitude ?? (businessEvent as any)?.latitude ?? 0}
+                longitude={effectiveDetail?.location?.longitude ?? (businessEvent as any)?.longitude ?? 0}
+                locationName={displayLocation || ""}
+                address={displayLocation || ""}
+              />
+            </View>
+          </View>
 
           {displayTags.length > 0 ? (
             <View style={styles.section}>
@@ -358,6 +551,17 @@ export default function PreviewEventScreen() {
               <ThemedText type="h4" style={styles.sectionTitle}>Mapa de sectores</ThemedText>
               <Image
                 source={{ uri: draftEvent.mapImage }}
+                style={styles.sectorMap}
+                contentFit="contain"
+              />
+            </View>
+          ) : null}
+
+          {isPublishedEvent && (businessEvent as any)?.sectorImage ? (
+            <View style={styles.section}>
+              <ThemedText type="h4" style={styles.sectionTitle}>Mapa de sectores</ThemedText>
+              <Image
+                source={(businessEvent as any).sectorImage}
                 style={styles.sectorMap}
                 contentFit="contain"
               />

@@ -7,13 +7,7 @@ import {
 
 const DEFAULT_VERIFICATION_CODE = "4821";
 
-const primaryUserFavoriteEventIds = TEST_DATABASE.favoritos
-  .filter((favorite) => favorite.usuario_id === PRIMARY_TEST_USER.id)
-  .map((favorite) => favorite.evento_id);
-
-const favoriteEvents = TEST_DATABASE.events.filter((event) =>
-  primaryUserFavoriteEventIds.includes(event.id)
-);
+// Favoritos hardcoded removidos: la app usa bookmarks dinámicos desde contexto.
 
 const toInterestId = (name: string) =>
   name
@@ -30,9 +24,8 @@ const PROFILE_STATS = {
   following: TEST_DATABASE.organizadores.filter(
     (organizer) => organizer.suscribed === 1
   ).length,
-  tickets: TEST_DATABASE.favoritos.filter(
-    (favorite) => favorite.usuario_id === PRIMARY_TEST_USER.id
-  ).length,
+  // Tickets/favoritos dinámicos: calcular en pantalla via contexto
+  tickets: 0,
 };
 
 const PROFILE_ACCOUNTS_BASE = [
@@ -96,7 +89,7 @@ export const AUTH_TEST_CREDENTIALS = {
   interests: PRIMARY_TEST_USER_INTERESTS,
   avatar: PRIMARY_TEST_USER.avatar_url as ImageSourcePropType,
   passwordHash: PRIMARY_TEST_USER.password_hash,
-  favorites: primaryUserFavoriteEventIds,
+  // Sin favoritos hardcoded
 };
 
 export const TEST_CREDENTIALS = AUTH_TEST_CREDENTIALS;
@@ -108,17 +101,9 @@ export const BURGER_MENU_PROFILE = {
   bio: PRIMARY_TEST_USER.bio,
   avatar: PRIMARY_TEST_USER.avatar_url as ImageSourcePropType,
   joinedAt: PRIMARY_TEST_USER.created_at,
-  favoriteEvents,
-  favoritesCount: favoriteEvents.length,
 };
 
-export const getFavoriteEventsForUser = (userId: number) => {
-  const favoriteIds = TEST_DATABASE.favoritos
-    .filter((favorite) => favorite.usuario_id === userId)
-    .map((favorite) => favorite.evento_id);
-
-  return TEST_DATABASE.events.filter((event) => favoriteIds.includes(event.id));
-};
+// getFavoriteEventsForUser removido: usar SavedEventsContext o bookmarks runtime
 
 export const getUserById = (userId: number) =>
   TEST_DATABASE.usuarios.find((user) => user.id === userId);

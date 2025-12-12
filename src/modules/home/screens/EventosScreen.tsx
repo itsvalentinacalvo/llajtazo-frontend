@@ -9,7 +9,7 @@ import { SectionHeaderLocation } from "@/src/modules/home/components/SectionHead
 import { SponsoredBanner } from "@/src/modules/home/components/SponsoredBanner";
 import { SponsoredRow } from "@/src/modules/home/components/SponsoredRow";
 import { Spacing } from "@/src/core/constants/theme";
-import { BANNER_EVENTS, NORMAL_EVENTS, SPONSORED_EVENTS, findEventById } from "@/src/core/data/events";
+import { BANNER_EVENTS, NORMAL_EVENTS, SPONSORED_EVENTS, findEventById } from "@/src/core/test/events";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { useScreenInsets } from "@/src/core/hooks/useScreenInsets";
 import type { EventosStackParamList } from "../navigation/stacks/EventosStack";
@@ -72,19 +72,38 @@ export default function EventosScreen() {
 
   // headerHeight provided by navigator's CoreHeader via HomeHeaderContext
 
-  const buildFeedData = (): FeedItem[] => {
-    const feedItems: FeedItem[] = [
-      { type: "section" },
-    ];
+  const shuffle = useCallback(<T,>(array: T[]): T[] => {
+    const a = [...array];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }, []);
+
+  const buildExtendedIds = useCallback((events: any[], repeat: number): string[] => {
+    const ids = events.map((e) => e.id);
+    let extended: string[] = [];
+    for (let r = 0; r < repeat; r++) {
+      extended = extended.concat(shuffle(ids));
+    }
+    return extended;
+  }, [shuffle]);
+
+  const buildFeedData = useCallback((): FeedItem[] => {
+    const feedItems: FeedItem[] = [{ type: "section" }];
+
+    const normalIds = buildExtendedIds(NORMAL_EVENTS as any[], 3);
+    const sponsoredIds = buildExtendedIds(SPONSORED_EVENTS as any[], 2);
 
     const normalRows: string[][] = [];
-    for (let i = 0; i < NORMAL_EVENTS.length; i += 2) {
-      normalRows.push(NORMAL_EVENTS.slice(i, i + 2).map((e) => e.id));
+    for (let i = 0; i < normalIds.length; i += 2) {
+      normalRows.push(normalIds.slice(i, i + 2));
     }
 
     const sponsoredPairs: string[][] = [];
-    for (let i = 0; i < SPONSORED_EVENTS.length; i += 2) {
-      sponsoredPairs.push(SPONSORED_EVENTS.slice(i, i + 2).map((e) => e.id));
+    for (let i = 0; i < sponsoredIds.length; i += 2) {
+      sponsoredPairs.push(sponsoredIds.slice(i, i + 2));
     }
 
     let sponsoredIndex = 0;
@@ -107,9 +126,9 @@ export default function EventosScreen() {
     });
 
     return feedItems;
-  };
+  }, [buildExtendedIds]);
 
-  const feedData = buildFeedData();
+  const feedData = useMemo(() => buildFeedData(), [buildFeedData]);
 
   console.debug("[Home][EventosScreen] render", { feedItems: feedData.length });
 
@@ -175,8 +194,8 @@ export default function EventosScreen() {
         renderItem={renderItem}
         keyExtractor={(item, index) => {
           if (item.type === "section") return "section";
-          if (item.type === "normalRow") return `normal-${item.events[0]}`;
-          if (item.type === "sponsoredRow") return `sponsored-${item.events[0]}`;
+          if (item.type === "normalRow") return `normal-${index}`;
+          if (item.type === "sponsoredRow") return `sponsored-${index}`;
           if (item.type === "sponsoredBanner") return `banner-${index}`;
           return `item-${index}`;
         }}

@@ -13,7 +13,8 @@ import { Octicons, FontAwesome6 } from "@expo/vector-icons";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { Colors, Spacing, BorderRadius, Shadows } from "@/src/core/constants/theme";
 import { MapEvent } from "../constants/mapEvents";
-import { findEventById } from "@/src/core/data/events";
+import { findEventById } from "@/src/core/test/events";
+import { getEventDetailById } from "@/src/core/test/eventDetailData";
 
 const CARD_WIDTH_RATIO = 0.92;
 const CARD_HEIGHT = 110;
@@ -74,10 +75,15 @@ export function MapEventsCards({
   );
 
   const renderCard = ({ item, index }: { item: MapEvent; index: number }) => {
-    const canonical = findEventById(item.eventId ?? item.id);
-    const displayTitle = canonical?.title ?? item.title;
-    const displayImage = canonical?.image ?? item.image;
-    const displayLocation = canonical?.location ?? item.location;
+    const eventId = item.eventId ?? item.id;
+    const detail = eventId ? getEventDetailById(eventId) : undefined;
+    const canonical = findEventById(eventId);
+
+    const displayTitle = detail?.title ?? canonical?.title ?? item.title;
+    const displayImage = (detail?.image as any) ?? canonical?.image ?? item.image;
+    const displayLocation = detail?.location?.name ?? canonical?.location ?? item.location;
+    const displayDate = detail?.date ?? item.date;
+    const displayTime = detail?.time ?? item.time;
     const isFirst = index === 0;
     const isLast = index === events.length - 1;
 
@@ -106,7 +112,7 @@ export function MapEventsCards({
           <View style={styles.cardContent}>
             <View style={styles.dateRow}>
               <ThemedText style={styles.dateText}>
-                {item.date} <ThemedText style={styles.timeDot}>•</ThemedText> {item.time}
+                {displayDate} <ThemedText style={styles.timeDot}>•</ThemedText> {displayTime}
               </ThemedText>
             </View>
 

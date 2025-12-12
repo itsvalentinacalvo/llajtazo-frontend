@@ -10,7 +10,7 @@ import { EventCardSmall } from "@/src/core/components/EventCardSmall";
 import { SponsoredBanner } from "@/src/modules/home/components/SponsoredBanner";
 import { InviteCard } from "@/src/core/components/InviteCard";
 import { Spacing } from "@/src/core/constants/theme";
-import { FEATURED_EVENTS, POPULAR_EVENTS, NEARBY_EVENTS, FOR_YOU_EVENTS, findEventById } from "@/src/core/data/events";
+import { FEATURED_EVENTS, POPULAR_EVENTS, NEARBY_EVENTS, FOR_YOU_EVENTS, findEventById } from "@/src/core/test/events";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import type { ExplorarStackParamList } from "../navigation/stacks/ExplorarStack";
 
