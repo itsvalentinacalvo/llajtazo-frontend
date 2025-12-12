@@ -146,20 +146,44 @@ export default function EventDetailScreen() {
           />
           <View style={styles.attendeesBadge}>
             <View style={styles.avatarStack}>
-              {[0, 1, 2].map((index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.avatar,
-                    { backgroundColor: theme.primary, borderColor: theme.white },
-                    index > 0 && styles.avatarOverlap,
-                  ]}
-                />
-              ))}
+              {
+                // Prefer explicit attendee avatar images if provided in eventData
+                (() => {
+                  const avatars: any[] = [];
+                  if (eventData.organizer?.avatar) avatars.push(eventData.organizer.avatar);
+                  if ((eventData as any).attendeeAvatars && Array.isArray((eventData as any).attendeeAvatars)) {
+                    (eventData as any).attendeeAvatars.slice(0, 2).forEach((a: any) => avatars.push(a));
+                  }
+                  // Ensure we always render 3 items (fill with placeholders)
+                  while (avatars.length < 3) avatars.push(undefined);
+
+                  return avatars.map((avatarSrc, index) => {
+                    if (avatarSrc) {
+                      return (
+                        <Image
+                          key={index}
+                          source={avatarSrc}
+                          style={[styles.avatarImage, index > 0 && styles.avatarOverlap]}
+                          contentFit="cover"
+                        />
+                      );
+                    }
+
+                    return (
+                      <View
+                        key={index}
+                        style={[
+                          styles.avatar,
+                          { backgroundColor: theme.primary, borderColor: theme.white },
+                          index > 0 && styles.avatarOverlap,
+                        ]}
+                      />
+                    );
+                  });
+                })()
+              }
             </View>
-            <ThemedText style={[styles.attendeesText, { color: theme.primary }]}>
-              +{eventData.attendeesCount} Irán
-            </ThemedText>
+            <ThemedText style={[styles.attendeesText, { color: theme.primary }]}>+{eventData.attendeesCount} Irán</ThemedText>
           </View>
         </View>
 
@@ -363,6 +387,14 @@ const styles = StyleSheet.create({
   },
   avatarOverlap: {
     marginLeft: -10,
+  },
+  avatarImage: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: Colors.light.white,
+    overflow: 'hidden',
   },
   attendeesText: {
     fontSize: 12,

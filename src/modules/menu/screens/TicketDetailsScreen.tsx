@@ -5,6 +5,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import TicketCard from "@/src/modules/menu/components/TicketCard";
+import { useTickets } from "@/src/core/context/TicketsContext";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { Spacing, Colors } from "@/src/core/constants/theme";
@@ -28,6 +29,7 @@ const TICKET_DATA: Record<
     time: string;
     ticketId: string;
     image: any;
+    sector?: string;
   }
 > = {
   "1": {
@@ -36,6 +38,7 @@ const TICKET_DATA: Record<
     date: "11 de Abril, 2025",
     time: "Viernes, 9:00 pm",
     ticketId: "#8954673009",
+    sector: "Platea A",
     image: require("@/src/modules/home/assets/cro-concierto.jpg"),
   },
   "2": {
@@ -44,6 +47,7 @@ const TICKET_DATA: Record<
     date: "15 de Mayo, 2025",
     time: "Jueves, 10:00 am",
     ticketId: "#8954673010",
+    sector: "General",
     image: require("@/src/modules/home/assets/fexco.jpg"),
   },
   "3": {
@@ -52,6 +56,7 @@ const TICKET_DATA: Record<
     date: "20 de Junio, 2025",
     time: "Sabado, 8:00 pm",
     ticketId: "#8954673011",
+    sector: "VIP",
     image: require("@/src/modules/home/assets/circo-capitulo-final.jpg"),
   },
   "4": {
@@ -60,6 +65,7 @@ const TICKET_DATA: Record<
     date: "06 de Junio, 2025",
     time: "Viernes, 10:00 pm",
     ticketId: "#8954673012",
+    sector: "Platea B",
     image: require("@/src/modules/home/assets/reik.png"),
   },
   "5": {
@@ -68,6 +74,7 @@ const TICKET_DATA: Record<
     date: "28 de Febrero, 2025",
     time: "Sabado, 10:00 pm",
     ticketId: "#8954673013",
+    sector: "General",
     image: require("@/src/modules/home/assets/brlin.png"),
   },
   "6": {
@@ -76,6 +83,7 @@ const TICKET_DATA: Record<
     date: "14 de Febrero, 2025",
     time: "Viernes, 11:00 pm",
     ticketId: "#8954673014",
+    sector: "VIP",
     image: require("@/src/modules/home/assets/pink-friday.png"),
   },
 };
@@ -87,13 +95,43 @@ export default function TicketDetailsScreen() {
   const insets = useSafeAreaInsets();
 
   const { ticketId, ticketCount = 1 } = route.params;
-  const ticket = TICKET_DATA[ticketId] || TICKET_DATA["1"];
-  const count = Math.max(1, ticketCount ?? 1);
-  const tickets = Array.from({ length: count }).map((_, idx) => ({
-    ...ticket,
-    // give each ticket instance a unique id so QR/ticket label can differ if needed
-    ticketId: `${ticket.ticketId}-${idx + 1}`,
-  }));
+  const { getByEventId } = useTickets();
+
+  // If the ticketId corresponds to an event id that has purchases, show those
+  const purchasedGroup = getByEventId(ticketId);
+  let tickets:
+    | Array<{ title: string; venue: string; date: string; time: string; ticketId: string; image: any }>
+    = [];
+
+  if (purchasedGroup) {
+    tickets = purchasedGroup.tickets.map((t) => ({
+      title: purchasedGroup.title,
+      venue: purchasedGroup.venue ?? "",
+      date: t.date ?? "",
+      time: t.time ?? "",
+      sector: t.sector ?? "",
+      ticketId: t.ticketId,
+      image: purchasedGroup.image,
+    }));
+  } else {
+    const ticket = TICKET_DATA[ticketId] || TICKET_DATA["1"];
+    const count = Math.max(1, ticketCount ?? 1);
+    tickets = Array.from({ length: count }).map((_, idx) => ({
+      ...ticket,
+      sector: ticket.sector ?? "",
+      // give each ticket instance a unique id so QR/ticket label can differ if needed
+      ticketId: `${ticket.ticketId}-${idx + 1}`,
+    }));
+  }
+
+  // Header title: prefer purchased group's title when available, otherwise use sample ticket title
+  const headerTitle = purchasedGroup ? purchasedGroup.title : (TICKET_DATA[ticketId]?.title ?? TICKET_DATA["1"].title);
+
+  // Defensive: ensure tickets array contains only valid ticket objects
+  tickets = tickets.filter((t) => t && typeof t.ticketId === "string");
+
+  // If no tickets remain after filtering, show a fallback
+  const noTickets = tickets.length === 0;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -104,7 +142,7 @@ export default function TicketDetailsScreen() {
         </Pressable>
 
         <ThemedText numberOfLines={1} style={[styles.headerTitle, { color: theme.text }]}>
-          {ticket.title}
+          {headerTitle}
         </ThemedText>
 
         <View style={styles.headerButton} />
@@ -119,6 +157,9 @@ export default function TicketDetailsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.ticketWrapper}>
+          {noTickets ? (
+            <ThemedText style={{ textAlign: 'center', padding: Spacing.lg, color: theme.textSecondary }}>No hay tickets disponibles</ThemedText>
+          ) : (
           <View style={{ width: "100%", height: TICKET_HEIGHT + Spacing.xl }}>
               {/* Horizontal scroll to allow swiping multiple tickets later (paging enabled) */}
               <ScrollView
@@ -148,6 +189,7 @@ export default function TicketDetailsScreen() {
                 })}
               </ScrollView>
             </View>
+          )}
         </View>
       </ScrollView>
     </View>

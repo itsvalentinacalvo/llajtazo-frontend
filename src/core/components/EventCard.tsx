@@ -67,18 +67,33 @@ export function EventCard({ eventId, isSaved = false, onPress, onBookmarkPress }
         </ThemedText>
 
         <View style={styles.attendeesRow}>
-          <View style={styles.avatarStack}>
-            {[0, 1, 2].map((index) => (
-              <View
-                key={index}
-                style={[
-                  styles.avatar,
-                  { backgroundColor: theme.primary, borderColor: theme.white },
-                  index > 0 && styles.avatarOverlap,
-                ]}
-              />
-            ))}
-          </View>
+            <View style={styles.avatarStack}>
+              {
+                // if event provides attendee avatars (optional), render them; otherwise fallback to colored placeholders
+                (() => {
+                  const avatars: any[] = (event as any).attendeeAvatars && Array.isArray((event as any).attendeeAvatars)
+                    ? (event as any).attendeeAvatars.slice(0, 3)
+                    : [];
+
+                  while (avatars.length < 3) avatars.push(undefined);
+
+                  return avatars.map((a, index) => (
+                    a ? (
+                      <Image key={index} source={a} style={[styles.avatarImage, index > 0 && styles.avatarOverlap]} resizeMode="cover" />
+                    ) : (
+                      <View
+                        key={index}
+                        style={[
+                          styles.avatar,
+                          { backgroundColor: theme.primary, borderColor: theme.white },
+                          index > 0 && styles.avatarOverlap,
+                        ]}
+                      />
+                    )
+                  ));
+                })()
+              }
+            </View>
           <ThemedText style={[styles.attendeesCount, { color: theme.primary }]}>
             +{attendees} Irán
           </ThemedText>
@@ -196,6 +211,14 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
+  },
+  avatarImage: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: Colors.light.white,
+    overflow: 'hidden',
   },
   avatarOverlap: {
     marginLeft: -8,

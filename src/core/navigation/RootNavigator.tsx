@@ -17,6 +17,7 @@ import PaymentErrorScreen from "@/src/modules/payment/screens/PaymentErrorScreen
 import PaymentResultScreen from "@/src/modules/payment/screens/PaymentResultScreen";
 import { SplashScreen, AppBootstrapProvider } from "@/src/modules/splash-screen";
 import { navigationRef } from "@/src/core/navigation/navigationRef";
+import { TicketsProvider } from "@/src/core/context/TicketsContext";
 
 const Stack = createNativeStackNavigator();
 
@@ -75,6 +76,7 @@ export default function RootNavigator() {
 
   return (
     <AppBootstrapProvider>
+      <TicketsProvider>
       <Animated.View style={[{ flex: 1 }, rootAnimatedStyle]}>
         <Stack.Navigator
           key={isAuthenticated ? "auth-true" : "auth-false"}
@@ -223,6 +225,7 @@ export default function RootNavigator() {
           />
         </Stack.Navigator>
       </Animated.View>
+      </TicketsProvider>
     </AppBootstrapProvider>
   );
 }
