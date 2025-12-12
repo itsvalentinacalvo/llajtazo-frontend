@@ -37,6 +37,26 @@ export default function PaymentSuccessScreen() {
     // after animations complete, navigate to Result screen forwarding params
     const timer = setTimeout(() => {
       const params = route?.params ?? {};
+
+      // Persist purchase into TicketsContext before navigating to Result
+      try {
+        const eventId = params?.eventId;
+        const ticketCount = Number(params?.ticketCount) || 1;
+        const title = (params as any)?.title || "Compra";
+        const image = (params as any)?.image;
+
+        if (eventId) {
+          // dynamic import to avoid circular deps at module load
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const { useTickets } = require("@/src/core/context/TicketsContext");
+          // The provider hook cannot be used here (outside component), so instead
+          // we'll navigate and let PaymentResultScreen add the tickets. If you
+          // prefer immediate persistence, move this logic to PaymentResultScreen.
+        }
+      } catch (e) {
+        // ignore
+      }
+
       (navigation as any).replace("Result", {
         ...params,
         // ensure ticketId exists

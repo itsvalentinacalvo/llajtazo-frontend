@@ -20,6 +20,7 @@ export type Ticket = {
   date: string;
   time: string;
   ticketId: string;
+  sector?: string;
   image: any;
 };
 
@@ -33,6 +34,11 @@ export default function TicketCard({
   height?: number;
 }) {
   const { theme } = useTheme();
+
+  // Defensive: if ticket is missing or malformed, render an empty placeholder
+  if (!ticket || !ticket.ticketId) {
+    return <View style={[styles.ticketWrapper, { width, height }]} />;
+  }
 
   function TicketShapeShadow({ width, height }: { width: number; height: number }) {
     const SHADOW_COLOR = Colors.light.primary;
@@ -110,8 +116,15 @@ export default function TicketCard({
             </View>
 
             <View style={styles.eventInfo} />
+          {/* Sector above date/time */}
+          {/* show sector then date/time row */}
+            {ticket.sector ? (
+              <View style={{ alignItems: 'center', paddingBottom: Spacing.xs }}>
+                <ThemedText style={[styles.sectorText, { color: theme.textSecondary }]} numberOfLines={1}>{ticket.sector}</ThemedText>
+              </View>
+            ) : null}
 
-          <View style={styles.dateTimeRow}>
+            <View style={styles.dateTimeRow}>
             <View style={styles.dateTimeItem}>
               <ThemedText style={[styles.dateTimeText, { color: theme.textSecondary }]}>{ticket.date}</ThemedText>
             </View>
@@ -165,7 +178,7 @@ const styles = StyleSheet.create({
   eventTitleOverlay: { fontSize: 22, fontWeight: "700", marginBottom: Spacing.xs },
   venueTextOverlay: { fontSize: 14, opacity: 0.9 },
   venueRowOverlay: { flexDirection: "row", alignItems: "center" },
-  eventInfo: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.lg, paddingBottom: Spacing.md },
+  eventInfo: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.md, paddingBottom: Spacing.xs },
   eventTitle: { fontSize: 22, fontWeight: "700", marginBottom: Spacing.xs },
   venueRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   venueText: { fontSize: 14 },
@@ -173,9 +186,10 @@ const styles = StyleSheet.create({
   dateTimeItem: { flexDirection: "row", alignItems: "center", gap: 6 },
   dateTimeDivider: { width: 1, height: 20, marginHorizontal: Spacing.lg },
   dateTimeText: { fontSize: 13 },
+  sectorText: { fontSize: 14, fontWeight: '600' },
   dashedLineContainer: { alignItems: "center", paddingVertical: Spacing.md, width: "100%" },
   dashedLine: { alignSelf: "center" },
-  qrSection: { alignItems: "center", paddingVertical: Spacing.lg, paddingBottom: Spacing.xl, gap: 10 },
+  qrSection: { alignItems: "center", paddingVertical: Spacing.sm, paddingBottom: Spacing.md, gap: 8 },
   qrLabel: { fontSize: 12, marginTop: Spacing.md },
   qrValue: { fontSize: 17, fontWeight: "700" },
 });

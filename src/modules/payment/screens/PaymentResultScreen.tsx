@@ -10,6 +10,7 @@ import { PriceSummary } from "@/src/modules/payment/components/PriceSummary";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { Colors, Spacing, BorderRadius, Typography } from "@/src/core/constants/theme";
 import { useTheme } from "@/src/core/hooks/useTheme";
+import { Button } from "@/src/core/components/Button";
 import { useProfile } from "@/src/core/context/ProfileContext";
 import { navigationRef } from "@/src/core/navigation/navigationRef";
 import { getEventDetailById } from "@/src/core/test/eventDetailData";
@@ -67,6 +68,69 @@ export default function PaymentResultScreen() {
     ticketId: `${String(selectedTicketId ?? DEFAULT_TICKET_ID_PREFIX)}-${idx + 1}`,
   }));
 
+  const { addPurchase } = useTickets();
+
+  // Persist the purchase as a group so it appears in MyTickets
+  React.useEffect(() => {
+    try {
+      const params = (route?.params as any) || {};
+      const eventId = params?.eventId || "cro";
+
+      // Build group using any provided title/image or fall back to sample
+      const groupTitle = params?.title ?? SAMPLE_TICKET.title;
+      const groupImage = params?.image ?? SAMPLE_TICKET.image;
+      const groupVenue = params?.venue ?? SAMPLE_TICKET.venue;
+
+      // Sanitize tickets: ensure ticketId exists and are strings
+      const sanitizedTickets = tickets
+        .filter((t) => t && t.ticketId)
+        .map((t) => ({
+          ticketId: String(t.ticketId),
+          title: t.title ?? groupTitle,
+          venue: t.venue ?? groupVenue,
+          date: t.date ?? "",
+          time: t.time ?? "",
+          sector: (t as any).sector ?? "",
+          image: t.image ?? groupImage,
+        }));
+
+      if (sanitizedTickets.length === 0) {
+        // nothing to persist
+        // eslint-disable-next-line no-console
+        console.warn("[PaymentResult] no valid tickets to persist, skipping addPurchase");
+        return;
+      }
+
+      const group = {
+        eventId,
+        title: groupTitle,
+        venue: groupVenue,
+        image: groupImage,
+        tickets: sanitizedTickets,
+      };
+
+      // Log the group shape for debugging to ensure tickets are well formed
+      try {
+        // eslint-disable-next-line no-console
+        console.log("[PaymentResult] persisting purchase group:", JSON.parse(JSON.stringify(group)));
+      } catch (e) {
+        // ignore stringify errors
+      }
+
+      if (typeof addPurchase === "function") {
+        addPurchase(group as any);
+      } else {
+        // eslint-disable-next-line no-console
+        console.warn("[PaymentResult] addPurchase not available");
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[PaymentResult] error while persisting purchase:", err);
+    }
+    // intentionally run only once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const { profile } = useProfile();
 
   /** ---------------------------
@@ -86,9 +150,13 @@ export default function PaymentResultScreen() {
       return;
     }
 
-    if (navigationRef.isReady()) {
-      navigationRef.reset({ index: 0, routes: [{ name: "Home" }] });
-      return;
+    try {
+      if (navigationRef && typeof navigationRef.isReady === "function" && navigationRef.isReady()) {
+        navigationRef.reset({ index: 0, routes: [{ name: "Home" }] });
+        return;
+      }
+    } catch (e) {
+      // ignore and fallback to navigation
     }
 
     (navigation as any).navigate?.("Home");
@@ -201,6 +269,26 @@ export default function PaymentResultScreen() {
           </View>
         </View>
 
+        <View style={styles.actionsContainer}>
+          <Button onPress={() => {
+            // navigate to the Tickets screen inside Home navigator
+            try {
+              (navigation as any).navigate?.('Home', { screen: 'Tickets' });
+            } catch (e) {
+              (navigation as any).navigate?.('Tickets');
+            }
+          }} style={styles.primaryButton} textStyle={styles.primaryButtonText}>
+            VER MIS TICKETS
+          </Button>
+
+          <Button onPress={() => {
+            // navigate to checkout for the same event
+            (navigation as any).navigate?.('PaymentCheckout', { eventId: routeEventId });
+          }} style={styles.primaryButton} textStyle={styles.primaryButtonText}>
+            COMPRAR MAS ENTRADAS
+          </Button>
+        </View>
+
         <View style={{ height: 60 }} />
       </ScrollView>
     </View>
@@ -258,6 +346,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.light.border,
     paddingTop: Spacing.lg,
+    paddingBottom: Spacing.lg,
   },
   methodCardInner: {
     backgroundColor: Colors.light.white,

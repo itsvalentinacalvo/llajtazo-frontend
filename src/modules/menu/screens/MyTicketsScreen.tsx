@@ -13,6 +13,7 @@ import { MenuStackParamList } from "@/src/modules/menu/navigation/MenuNavigator"
 
 import { AnimatedTabSwitch } from "@/src/modules/menu/components/AnimatedTabSwitch";
 import { TicketCard } from "@/src/modules/menu/components/EventTicketCard";
+import { useTickets } from "@/src/core/context/TicketsContext";
 
 type Nav = NativeStackNavigationProp<MenuStackParamList, "Tickets">;
 
@@ -75,7 +76,16 @@ export default function MyTicketsScreen() {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState("active");
 
-  const tickets = activeTab === "active" ? ACTIVE_TICKETS : USED_TICKETS;
+  const { groups } = useTickets();
+  const tickets = activeTab === "active"
+    ? groups.map((g) => ({
+        id: g.eventId,
+        title: g.title,
+        venue: g.venue ?? "",
+        image: g.image,
+        ticketCount: g.tickets.length,
+      }))
+    : USED_TICKETS;
 
   const goToDetails = (id: string) => {
     const ticket = tickets.find((t) => t.id === id);
@@ -84,7 +94,12 @@ export default function MyTicketsScreen() {
   };
 
   const goBack = () => {
-    navigation.goBack();
+    // Always navigate to the Explore tab in the Home tabs
+    try {
+      (navigation as any).navigate("Home", { screen: "HomeTabs", params: { screen: "ExplorarTab" } });
+    } catch (e) {
+      navigation.goBack();
+    }
   };
 
   const renderTicket = ({
