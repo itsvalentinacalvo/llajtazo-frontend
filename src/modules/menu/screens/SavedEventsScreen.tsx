@@ -104,6 +104,7 @@ export default function SavedEventsScreen() {
           <View style={styles.cardContainer}>
             <SavedEventCard
               title={item.title ?? ""}
+              subtitle={item.subtitle ?? undefined}
               dateTime={item.dateTime ?? ""}
               image={item.image}
               backgroundColor={item.backgroundColor ?? undefined}

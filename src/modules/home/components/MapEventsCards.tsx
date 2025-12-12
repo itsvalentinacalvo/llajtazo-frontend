@@ -13,6 +13,7 @@ import { Octicons, FontAwesome6 } from "@expo/vector-icons";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { Colors, Spacing, BorderRadius, Shadows } from "@/src/core/constants/theme";
 import { MapEvent } from "../constants/mapEvents";
+import { findEventById } from "@/src/core/data/events";
 
 const CARD_WIDTH_RATIO = 0.92;
 const CARD_HEIGHT = 110;
@@ -73,6 +74,10 @@ export function MapEventsCards({
   );
 
   const renderCard = ({ item, index }: { item: MapEvent; index: number }) => {
+    const canonical = findEventById(item.eventId ?? item.id);
+    const displayTitle = canonical?.title ?? item.title;
+    const displayImage = canonical?.image ?? item.image;
+    const displayLocation = canonical?.location ?? item.location;
     const isFirst = index === 0;
     const isLast = index === events.length - 1;
 
@@ -91,7 +96,7 @@ export function MapEventsCards({
       >
         <View style={styles.card}>
           <Image
-            source={item.image}
+            source={displayImage as any}
             style={styles.cardImage}
             contentFit="cover"
             transition={200}
@@ -106,7 +111,7 @@ export function MapEventsCards({
             </View>
 
             <ThemedText style={styles.cardTitle} numberOfLines={1}>
-              {item.title}
+              {displayTitle}
             </ThemedText>
 
             <View style={styles.locationRow}>
@@ -114,7 +119,7 @@ export function MapEventsCards({
                 <FontAwesome6 name="location-dot" size={12} color={Colors.light.primary} />
               </View>
               <ThemedText style={styles.locationText} numberOfLines={1}>
-                {item.location}
+                {displayLocation}
               </ThemedText>
             </View>
           </View>

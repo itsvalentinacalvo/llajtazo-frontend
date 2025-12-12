@@ -131,6 +131,10 @@ export function getEventDetailById(eventId: string): EventDetail | null {
     "banner2": CRO_EVENT_DETAIL,
     "featured-2": CRO_EVENT_DETAIL,
     "cro-concierto-1": CRO_EVENT_DETAIL,
+    // Accept canonical ids so screens that now navigate using canonical ids
+    // (e.g. `cro`) will still find the detailed test data.
+    "cro": CRO_EVENT_DETAIL,
+    "cro-concierto": CRO_EVENT_DETAIL,
   };
   
   return eventMappings[eventId] || null;

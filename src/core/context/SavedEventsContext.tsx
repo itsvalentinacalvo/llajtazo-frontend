@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
+import { findEventById, findCanonicalEvent } from "@/src/core/data/events";
 
 export type SavedEventMinimal = {
   id: string;
@@ -11,6 +12,7 @@ export type SavedEventMinimal = {
   image?: any;
   backgroundColor?: string;
   location?: string;
+  subtitle?: string;
   category?: string;
   isExpired?: boolean;
 };
@@ -30,13 +32,21 @@ export function SavedEventsProvider({ children }: { children: ReactNode }) {
   const toggleSaved = (event: SavedEventMinimal) => {
     setSavedMapState((prev) => {
       const next = new Map(prev);
-      if (next.has(event.id)) {
-        next.delete(event.id);
+      // determine a canonical id to use as the map key. Prefer exact id,
+      // then try to match a canonical event by title/location or other heuristics.
+      const canonical = findEventById(event.id) || findCanonicalEvent(event as any);
+      const key = (canonical && canonical.id) || event.id;
+
+      if (next.has(key)) {
+        next.delete(key);
         return next;
       }
 
-      // Normalize and compute a display `dateTime` if not provided.
-      const normalized: SavedEventMinimal = { ...event };
+      // If a master event exists in central data, prefer its canonical fields
+      const master = canonical || findEventById(event.id);
+      const normalized: SavedEventMinimal = { ...(master as any || {}), ...event };
+
+      // Normalize and compute a display `dateTime` if not provided (master may supply date/time)
 
       if (!normalized.dateTime) {
         // Case: date is a plain string and time may exist
@@ -61,12 +71,34 @@ export function SavedEventsProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      next.set(event.id, normalized);
+      next.set(key, normalized);
       return next;
     });
   };
 
-  const isSaved = (id: string) => savedMapState.has(id);
+  const isSaved = (id: string) => {
+    if (savedMapState.has(id)) return true;
+
+    // If the id corresponds to a canonical event in central data,
+    // check if any saved entry matches that canonical event (by id or by title/location).
+    const master = findEventById(id);
+    if (master) {
+      if (savedMapState.has(master.id)) return true;
+      for (const v of savedMapState.values()) {
+        if (v.title && v.location && v.title === master.title && v.location === master.location) return true;
+      }
+    }
+
+    // As a final fallback, check if any saved event matches the same title/location
+    for (const v of savedMapState.values()) {
+      // if the provided id corresponds to an in-memory saved item key that isn't canonical,
+      // we already returned true above. Without other context (title/location) we can't do more.
+      // This loop will still catch cases where multiple different ids share the same title/location.
+      if (!master && v.id === id) return true;
+    }
+
+    return false;
+  };
 
   const getAll = () => Array.from(savedMapState.values());
 

@@ -7,22 +7,9 @@ import { useTheme } from "@/src/core/hooks/useTheme";
 const GRID_GAP = Spacing.md;
 const HORIZONTAL_PADDING = Spacing.xl;
 
-interface SponsoredEvent {
-  id: string;
-  title: string;
-  subtitle?: string;
-  date: { day: string; month: string };
-  location: string;
-  image: ImageSourcePropType;
-  sponsor: {
-    name: string;
-    avatar: ImageSourcePropType;
-  };
-}
-
 interface SponsoredRowProps {
-  events: [SponsoredEvent, SponsoredEvent?];
-  onEventPress?: (event: SponsoredEvent) => void;
+  events: [string, string?];
+  onEventPress?: (eventId: string) => void;
 }
 
 export function SponsoredRow({ events, onEventPress }: SponsoredRowProps) {
@@ -41,18 +28,13 @@ export function SponsoredRow({ events, onEventPress }: SponsoredRowProps) {
       <View style={styles.innerSpacer} />
       
       <View style={styles.row}>
-        {events.map((event, index) =>
-          event ? (
+        {events.map((eventId, index) =>
+          eventId ? (
             <SponsoredEventCard
-              key={event.id}
-              title={event.title}
-              subtitle={event.subtitle}
-              date={event.date}
-              location={event.location}
-              image={event.image}
-              sponsor={event.sponsor}
+              key={eventId}
+              eventId={eventId}
               cardWidth={cardWidth}
-              onPress={() => onEventPress?.(event)}
+              onPress={() => onEventPress?.(eventId)}
             />
           ) : (
             <View key={`empty-${index}`} style={{ width: cardWidth }} />

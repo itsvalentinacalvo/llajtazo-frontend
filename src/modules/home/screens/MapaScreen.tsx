@@ -9,6 +9,7 @@ import { MapContainer, MapContainerRef } from "../components/MapContainer";
 import { MapEventsCards } from "../components/MapEventsCards";
 import { GoogleMapsButton } from "../components/GoogleMapsButton";
 import { MAP_EVENTS, MapEvent, CATEGORY_CONFIG } from "../constants/mapEvents";
+import { findEventById } from "@/src/core/data/events";
 import { useSavedEvents } from "@/src/core/context/SavedEventsContext";
 import { Spacing } from "@/src/core/constants/theme";
 import type { MapaStackParamList } from "../navigation/stacks/MapaStack";
@@ -26,7 +27,11 @@ export default function MapaScreen() {
   const { selectedCategory } = useHomeHeader();
   const { isSaved, toggleSaved } = useSavedEvents();
 
-  const allEventsWithSaved = MAP_EVENTS.map((e) => ({ ...e, isSaved: isSaved(e.id) }));
+  const allEventsWithSaved = MAP_EVENTS.map((e) => ({
+    ...e,
+    // Prefer canonical event id when checking saved state
+    isSaved: isSaved(e.eventId ?? e.id),
+  }));
 
   const filteredEvents = selectedCategory
     ? allEventsWithSaved.filter((e) => {
@@ -84,8 +89,27 @@ export default function MapaScreen() {
 
   const handleBookmarkToggle = useCallback((eventIdOrObj: any) => {
     // accept either id or full event object
-    const ev = typeof eventIdOrObj === "string" ? MAP_EVENTS.find((e) => e.id === eventIdOrObj) : eventIdOrObj;
+    const ev: MapEvent | undefined =
+      typeof eventIdOrObj === "string" ? MAP_EVENTS.find((e) => e.id === eventIdOrObj) : eventIdOrObj;
     if (!ev) return;
+
+    // If the map event references a canonical event, save using the canonical id and master data.
+    const canonicalId = ev.eventId ?? ev.id;
+    const canonical = findEventById(canonicalId);
+
+    if (canonical) {
+      toggleSaved({
+        id: canonical.id,
+        title: canonical.title,
+        subtitle: canonical.subtitle,
+        image: canonical.image,
+        dateTime: formatDateTimeForSave(ev),
+        location: canonical.location,
+      });
+      return;
+    }
+
+    // Fallback: save the map-specific event object
     toggleSaved({ id: ev.id, title: ev.title, image: ev.image, dateTime: formatDateTimeForSave(ev), location: ev.location });
   }, [toggleSaved, formatDateTimeForSave]);
 
@@ -122,7 +146,7 @@ export default function MapaScreen() {
           selectedEventId={selectedEvent?.id}
           onEventChange={handleEventChange}
           onBookmarkToggle={handleBookmarkToggle}
-          onEventPress={(event) => openEventDetail(event.id)}
+          onEventPress={(event) => openEventDetail(event.eventId ?? event.id)}
           bottomInset={cardsBottomOffset + 4}
         />
       </View>

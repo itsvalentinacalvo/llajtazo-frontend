@@ -8,6 +8,7 @@ import { BorderRadius, Spacing, Shadows, Colors } from "@/src/core/constants/the
 interface SavedEventCardProps {
   title: string;
   dateTime: string;
+  subtitle?: string;
   location?: string;
   image: ImageSourcePropType;
   backgroundColor?: string;
@@ -18,6 +19,7 @@ interface SavedEventCardProps {
 export function SavedEventCard({
   title,
   dateTime,
+  subtitle,
   location,
   image,
   backgroundColor = "#FFFFFF",
@@ -46,6 +48,12 @@ export function SavedEventCard({
         <ThemedText style={[styles.title, disabled && styles.titleDisabled]} numberOfLines={3}>
           {title}
         </ThemedText>
+
+        {subtitle ? (
+          <ThemedText style={[styles.subtitle, disabled && styles.titleDisabled]} numberOfLines={1}>
+            {subtitle}
+          </ThemedText>
+        ) : null}
 
         {location ? (
           <View style={styles.locationRow}>
@@ -105,6 +113,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#120D26",
+  },
+  subtitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#666666",
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xs,
   },
   titleDisabled: {
     color: "rgba(18,13,38,0.45)",

@@ -10,137 +10,14 @@ import { EventCardSmall } from "@/src/core/components/EventCardSmall";
 import { SponsoredBanner } from "@/src/modules/home/components/SponsoredBanner";
 import { InviteCard } from "@/src/core/components/InviteCard";
 import { Spacing } from "@/src/core/constants/theme";
+import { FEATURED_EVENTS, POPULAR_EVENTS, NEARBY_EVENTS, FOR_YOU_EVENTS, findEventById } from "@/src/core/data/events";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import type { ExplorarStackParamList } from "../navigation/stacks/ExplorarStack";
 
 const GRID_GAP = Spacing.md;
 const HORIZONTAL_PADDING = Spacing.xl;
 
-const FEATURED_EVENTS = [
-  {
-    id: "featured-1",
-    title: "Corona y Lu de la Tower",
-    location: "Alice Park",
-    image: require("@/src/modules/home/assets/corona-lu-tower.jpg"),
-  },
-  {
-    id: "featured-2",
-    title: "C.R.O en Concierto",
-    location: "Alice Park",
-    image: require("@/src/modules/home/assets/cro-concierto.jpg"),
-  },
-  {
-    id: "featured-3",
-    title: "El Circo - Capítulo Final",
-    location: "Alice Park",
-    image: require("@/src/modules/home/assets/circo-capitulo-final.jpg"),
-  },
-];
 
-const POPULAR_EVENTS = [
-  {
-    id: "1",
-    title: "C.R.O Concierto",
-    date: { day: "11", month: "ABR" },
-    location: "Alice Park",
-    attendees: 200,
-    image: require("@/src/modules/home/assets/cro-concierto.jpg"),
-  },
-  {
-    id: "2",
-    title: "Noche de Música",
-    date: { day: "30", month: "SEP" },
-    location: "Radius Gallery",
-    attendees: 150,
-    image: require("@/src/modules/home/assets/levitar.png"),
-  },
-  {
-    id: "3",
-    title: "Doble Via en Vivo",
-    date: { day: "29", month: "NOV" },
-    location: "Alice Park",
-    attendees: 320,
-    image: require("@/src/modules/home/assets/doble-via.png"),
-  },
-];
-
-const NEARBY_EVENTS = [
-  {
-    id: "4",
-    title: "El Circo - Capítulo Final",
-    date: { day: "23", month: "AGO" },
-    location: "Alice Park",
-    attendees: 200,
-    image: require("@/src/modules/home/assets/circo-capitulo-final.jpg"),
-  },
-  {
-    id: "5",
-    title: "Noche de Música",
-    date: { day: "30", month: "SEP" },
-    location: "Radius Gallery",
-    attendees: 150,
-    image: require("@/src/modules/home/assets/levitar.png"),
-  },
-  {
-    id: "6",
-    title: "Fexco Negocios 2025",
-    date: { day: "15", month: "DIC" },
-    location: "Centro de Eventos",
-    attendees: 95,
-    image: require("@/src/modules/home/assets/fexco.jpg"),
-  },
-];
-
-const FOR_YOU_EVENTS = [
-  {
-    id: "7",
-    title: "C.R.O",
-    subtitle: "en Concierto",
-    date: { day: "11", month: "ABR" },
-    location: "Alice Park",
-    image: require("@/src/modules/home/assets/cro-concierto.jpg"),
-  },
-  {
-    id: "8",
-    title: "Modo Cumbia",
-    subtitle: "18 Kilates y Joseca",
-    date: { day: "28", month: "NOV" },
-    location: "Euphoria",
-    image: require("@/src/modules/home/assets/modo-cumbia.png"),
-  },
-  {
-    id: "9",
-    title: "B-RLIN",
-    subtitle: "en Concierto",
-    date: { day: "05", month: "OCT" },
-    location: "Euphoria",
-    image: require("@/src/modules/home/assets/brlin.png"),
-  },
-  {
-    id: "10",
-    title: "Reik",
-    subtitle: "en Concierto",
-    date: { day: "06", month: "JUN" },
-    location: "Euphoria",
-    image: require("@/src/modules/home/assets/reik.png"),
-  },
-  {
-    id: "11",
-    title: "Oktober Fest",
-    subtitle: "",
-    date: { day: "25", month: "NOV" },
-    location: "Euphoria",
-    image: require("@/src/modules/home/assets/oktober-fest.png"),
-  },
-  {
-    id: "12",
-    title: "Pink Friday",
-    subtitle: "",
-    date: { day: "03", month: "DIC" },
-    location: "Noma",
-    image: require("@/src/modules/home/assets/pink-friday.png"),
-  },
-];
 
 type NavigationProp = NativeStackNavigationProp<ExplorarStackParamList>;
 
@@ -178,13 +55,16 @@ export default function ExplorarScreen() {
     return event.dateTime ?? undefined;
   }, []);
 
-  const handleBookmarkToggle = useCallback((event: any) => {
+  const handleBookmarkToggle = useCallback((eventId: string) => {
+    const ev = findEventById(eventId);
+    if (!ev) return;
     toggleSaved({
-      id: event.id,
-      title: event.title,
-      image: event.image,
-      dateTime: formatDateTimeForSave(event),
-      location: event.location,
+      id: ev.id,
+      title: ev.title,
+      subtitle: ev.subtitle,
+      image: ev.image,
+      dateTime: formatDateTimeForSave(ev),
+      location: ev.location,
     });
   }, [toggleSaved, formatDateTimeForSave]);
 
@@ -203,7 +83,7 @@ export default function ExplorarScreen() {
       >
         <View style={styles.featuredContainer}>
           <SponsoredBanner
-            events={FEATURED_EVENTS}
+            events={FEATURED_EVENTS.map((e) => ({ ...e, location: e.location ?? "", image: e.image! })) as any}
             onPress={(event) => openEventDetail(event.id)}
             autoPlayInterval={7000}
           />
@@ -222,14 +102,10 @@ export default function ExplorarScreen() {
           {POPULAR_EVENTS.map((event) => (
             <EventCard
               key={event.id}
-              title={event.title}
-              date={event.date}
-              location={event.location}
-              attendees={event.attendees}
-              image={event.image}
+              eventId={event.id}
               isSaved={isSaved(event.id)}
               onPress={() => openEventDetail(event.id)}
-              onBookmarkPress={() => handleBookmarkToggle(event)}
+              onBookmarkPress={() => handleBookmarkToggle(event.id)}
             />
           ))}
         </ScrollView>
@@ -251,14 +127,10 @@ export default function ExplorarScreen() {
           {NEARBY_EVENTS.map((event) => (
             <EventCard
               key={event.id}
-              title={event.title}
-              date={event.date}
-              location={event.location}
-              attendees={event.attendees}
-              image={event.image}
+              eventId={event.id}
               isSaved={isSaved(event.id)}
               onPress={() => openEventDetail(event.id)}
-              onBookmarkPress={() => handleBookmarkToggle(event)}
+              onBookmarkPress={() => handleBookmarkToggle(event.id)}
             />
           ))}
         </ScrollView>
@@ -272,15 +144,11 @@ export default function ExplorarScreen() {
           {FOR_YOU_EVENTS.map((event) => (
             <EventCardSmall
               key={event.id}
-              title={event.title}
-              subtitle={event.subtitle}
-              date={event.date}
-              location={event.location}
-              image={event.image}
+              eventId={event.id}
               cardWidth={cardWidth}
               isSaved={isSaved(event.id)}
               onPress={() => openEventDetail(event.id)}
-              onBookmarkPress={() => handleBookmarkToggle(event)}
+              onBookmarkPress={() => handleBookmarkToggle(event.id)}
             />
           ))}
         </View>

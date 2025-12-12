@@ -11,15 +11,12 @@ import { Feather, Octicons } from "@expo/vector-icons";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { BorderRadius, Spacing, Shadows, Colors } from "@/src/core/constants/theme";
 import { useTheme } from "@/src/core/hooks/useTheme";
+import { findEventById } from "@/src/core/data/events";
 
 const IMAGE_HEIGHT_RATIO = 0.79;
 
 interface EventCardSmallProps {
-  title: string;
-  subtitle?: string;
-  date: { day: string; month: string };
-  location: string;
-  image: ImageSourcePropType;
+  eventId: string;
   cardWidth: number;
   noMargin?: boolean;
   isSaved?: boolean;
@@ -28,19 +25,11 @@ interface EventCardSmallProps {
   onBookmarkPress?: () => void;
 }
 
-export function EventCardSmall({
-  title,
-  subtitle,
-  date,
-  location,
-  image,
-  cardWidth,
-  noMargin = false,
-  isSaved = false,
-  showBookmark = true,
-  onPress,
-  onBookmarkPress,
-}: EventCardSmallProps) {
+export function EventCardSmall({ eventId, cardWidth, noMargin = false, isSaved = false, showBookmark = true, onPress, onBookmarkPress }: EventCardSmallProps) {
+  const event = findEventById(eventId);
+  if (!event) return null;
+  const { title, subtitle, date, location, image } = event as any;
+  const dateObj: any = date;
   const { theme } = useTheme();
   const { width: screenWidth } = useWindowDimensions();
   const imageHeight = cardWidth * IMAGE_HEIGHT_RATIO;
@@ -70,10 +59,12 @@ export function EventCardSmall({
     >
       <View style={[styles.imageContainer, { height: imageHeight }]}>
         <Image source={image} style={styles.eventImage} resizeMode="cover" />
-        <View style={styles.dateBadge}>
-          <ThemedText style={styles.dateDay}>{date.day}</ThemedText>
-          <ThemedText style={styles.dateMonth}>{date.month}</ThemedText>
-        </View>
+        {dateObj && typeof dateObj.day !== "undefined" && (
+          <View style={styles.dateBadge}>
+            <ThemedText style={styles.dateDay}>{dateObj.day}</ThemedText>
+            <ThemedText style={styles.dateMonth}>{dateObj.month}</ThemedText>
+          </View>
+        )}
         {showBookmark ? (
           <Pressable
             style={[styles.bookmarkButton, { width: bookmarkButtonSize, height: bookmarkButtonSize }]}

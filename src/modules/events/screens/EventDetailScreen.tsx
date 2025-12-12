@@ -21,6 +21,7 @@ import { MiniMap } from "../components/MiniMap";
 import { ShareTab } from "@/src/core/components/ShareTab";
 import { BuyTicketButton } from "../components/BuyTicketButton";
 import { getEventDetailById } from "@/src/core/test/eventData";
+import { findEventById, findCanonicalEvent } from "@/src/core/data/events";
 
 type EventDetailRouteProp = RouteProp<{ EventDetail: { eventId: string } }, "EventDetail">;
 
@@ -31,12 +32,65 @@ export default function EventDetailScreen() {
   const { theme } = useTheme();
   
   const eventId = route.params?.eventId || "1";
-  const eventData = getEventDetailById(eventId);
-  
+  let eventData = getEventDetailById(eventId);
+
+  // If no test detail exists, try to resolve a canonical event and build a
+  // minimal EventDetail object so the screen can render without crashing.
+  if (!eventData) {
+    const canonical = findEventById(eventId) || findCanonicalEvent({ id: eventId } as any);
+    if (canonical) {
+      const dateObj: any = canonical.date;
+      const dateStr = dateObj
+        ? (typeof dateObj === "string" ? dateObj : `${dateObj.day} de ${dateObj.month}`)
+        : "";
+
+      // safe default organizer/avatar — reuse the Alice Park asset if available
+      let defaultAvatar: any;
+      try {
+        // path used elsewhere in test data
+        defaultAvatar = require("@/src/core/assets/events/alice-park/profile.jpg");
+      } catch (e) {
+        defaultAvatar = undefined;
+      }
+
+      eventData = {
+        id: canonical.id,
+        title: canonical.title,
+        subtitle: canonical.subtitle || "",
+        description: canonical.subtitle || "",
+        date: dateStr,
+        time: canonical.time || "",
+        dayOfWeek: "",
+        image: canonical.image as any,
+        attendeesCount: canonical.attendees || 0,
+        ageRestriction: "",
+        refundPolicy: "",
+        organizer: {
+          id: 0,
+          name: canonical.sponsor?.name || canonical.location || "Organizador",
+          avatar: (canonical.sponsor && (canonical.sponsor.avatar as any)) || defaultAvatar,
+          followers: 0,
+          isFollowing: false,
+        },
+        location: {
+          id: 0,
+          name: canonical.location || "",
+          address: canonical.location || "",
+          latitude: (canonical as any).coordinate?.latitude || 0,
+          longitude: (canonical as any).coordinate?.longitude || 0,
+        },
+        tickets: [],
+        sectors: [],
+        spotifyPlaylist: { embedUrl: "" },
+        category: (canonical.category && (Array.isArray(canonical.category) ? canonical.category[0] : canonical.category)) || "",
+      } as any;
+    }
+  }
+
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(
-    eventData?.tickets.find((t) => t.available && !t.isSoldOut)?.id || null
+    eventData?.tickets?.find((t) => t.available && !t.isSoldOut)?.id || null
   );
-  const [isFollowing, setIsFollowing] = useState(eventData?.organizer.isFollowing || false);
+  const [isFollowing, setIsFollowing] = useState(eventData?.organizer?.isFollowing || false);
   const [isShareTabVisible, setShareTabVisible] = useState(false);
 
   if (!eventData) {
@@ -133,7 +187,7 @@ export default function EventDetailScreen() {
             <View style={styles.infoContent}>
               <ThemedText style={styles.infoLabel}>{eventData.location.name}</ThemedText>
               <ThemedText style={[styles.infoSubLabel, { color: theme.textSecondary }]}>
-                {eventData.location.address.split(",")[0]}
+                {eventData.location?.address ? eventData.location.address.split(",")[0] : eventData.location?.name}
               </ThemedText>
             </View>
           </View>
@@ -212,10 +266,10 @@ export default function EventDetailScreen() {
                 </View>
               </View>
               <MiniMap
-                latitude={eventData.location.latitude}
-                longitude={eventData.location.longitude}
-                locationName={eventData.location.name}
-                address={eventData.location.address}
+                latitude={eventData.location?.latitude ?? 0}
+                longitude={eventData.location?.longitude ?? 0}
+                locationName={eventData.location?.name ?? ""}
+                address={eventData.location?.address ?? ""}
               />
             </View>
           </View>
