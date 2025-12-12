@@ -27,11 +27,11 @@ export function BuyTicketButton({
   const handlePress = () => {
     if (onPress) {
       onPress();
-    } else {
-      navigation.navigate("PaymentCheckout" as never, {
+      } else {
+      (navigation as any).navigate("PaymentCheckout", {
         selectedTicketId,
         eventId,
-      } as never);
+      });
     }
   };
 
