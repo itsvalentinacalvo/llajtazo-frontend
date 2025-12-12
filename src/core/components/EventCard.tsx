@@ -4,28 +4,20 @@ import { Feather, Octicons } from "@expo/vector-icons";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { BorderRadius, Spacing, Shadows, Colors } from "@/src/core/constants/theme";
 import { useTheme } from "@/src/core/hooks/useTheme";
+import { findEventById } from "@/src/core/data/events";
 
 interface EventCardProps {
-  title: string;
-  date: { day: string; month: string };
-  location: string;
-  attendees: number;
-  image: ImageSourcePropType;
+  eventId: string;
   isSaved?: boolean;
   onPress?: () => void;
   onBookmarkPress?: () => void;
 }
 
-export function EventCard({
-  title,
-  date,
-  location,
-  attendees,
-  image,
-  isSaved = false,
-  onPress,
-  onBookmarkPress,
-}: EventCardProps) {
+export function EventCard({ eventId, isSaved = false, onPress, onBookmarkPress }: EventCardProps) {
+  const event = findEventById(eventId);
+  if (!event) return null;
+  const { title, date, location, attendees = 0, image } = event;
+  const dateObj: any = date;
   const { theme } = useTheme();
   const { width: screenWidth } = useWindowDimensions();
   
@@ -46,10 +38,12 @@ export function EventCard({
     >
       <View style={[styles.imageContainer, { height: imageHeight }]}>
         <Image source={image} style={styles.eventImage} resizeMode="cover" />
-        <View style={styles.dateBadge}>
-          <ThemedText style={styles.dateDay}>{date.day}</ThemedText>
-          <ThemedText style={styles.dateMonth}>{date.month}</ThemedText>
-        </View>
+        {dateObj && typeof dateObj.day !== "undefined" && (
+          <View style={styles.dateBadge}>
+            <ThemedText style={styles.dateDay}>{dateObj.day}</ThemedText>
+            <ThemedText style={styles.dateMonth}>{dateObj.month}</ThemedText>
+          </View>
+        )}
         <Pressable
           style={styles.bookmarkButton}
           onPress={(e) => {

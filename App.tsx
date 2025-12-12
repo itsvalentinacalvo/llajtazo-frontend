@@ -8,6 +8,7 @@ import ErrorBoundary from "@/src/core/components/ErrorBoundary";
 import RootNavigator from "@/src/core/navigation/RootNavigator";
 import { navigationRef } from "@/src/core/navigation/navigationRef";
 import { ProfileProvider } from "@/src/core/context/ProfileContext";
+import { SavedEventsProvider } from "@/src/core/context/SavedEventsContext";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { StatusBarProvider } from "@/src/core/context/StatusBarContext";
 import { BusinessProvider } from "@/src/modules/business/context/BusinessContext";
@@ -19,6 +20,7 @@ export default function App() {
     <ErrorBoundary>
       <BusinessProvider>
         <ProfileProvider>
+          <SavedEventsProvider>
           <SafeAreaProvider>
             <GestureHandlerRootView style={[styles.root, { backgroundColor: theme.backgroundRoot }]}>
               <KeyboardProvider>
@@ -29,7 +31,8 @@ export default function App() {
                 </StatusBarProvider>
               </KeyboardProvider>
             </GestureHandlerRootView>
-          </SafeAreaProvider>
+            </SafeAreaProvider>
+          </SavedEventsProvider>
         </ProfileProvider>
       </BusinessProvider>
     </ErrorBoundary>

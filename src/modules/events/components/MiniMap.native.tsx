@@ -17,12 +17,11 @@ export function MiniMap({ latitude, longitude, locationName, address }: MiniMapP
   const { theme } = useTheme();
 
   const openInMaps = () => {
-    const url = Platform.select({
-      ios: `maps://app?daddr=${latitude},${longitude}`,
-      android: `google.navigation:q=${latitude},${longitude}`,
-      default: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`,
-    });
-    Linking.openURL(url as string);
+    // Always open Google Maps web URL so iOS doesn't route to Apple Maps.
+    // This ensures behavior is consistent across platforms and opens
+    // the Google Maps app only if the user has it and the OS chooses to handle it.
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+    Linking.openURL(url);
   };
 
   return (
@@ -46,15 +45,15 @@ export function MiniMap({ latitude, longitude, locationName, address }: MiniMapP
             title={locationName}
           />
         </MapView>
-        <Pressable
-          style={[styles.expandButton, { backgroundColor: theme.backgroundRoot }]}
-          onPress={openInMaps}
-        >
-          <Feather name="maximize-2" size={16} color={theme.primary} />
-          <ThemedText style={[styles.expandText, { color: theme.primary }]}>
-            Ampliar el Mapa
-          </ThemedText>
-        </Pressable>
+        {latitude && longitude ? (
+          <Pressable
+            style={[styles.expandButton, { backgroundColor: theme.backgroundRoot }]}
+            onPress={openInMaps}
+          >
+            <Feather name="external-link" size={16} color={theme.primary} />
+            <ThemedText style={[styles.expandText, { color: theme.primary }]}>Abrir en Google Maps</ThemedText>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );

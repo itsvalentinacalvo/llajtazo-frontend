@@ -548,7 +548,7 @@ export default function PerfilBusinessScreen() {
             {organizerEvents.map((event) => (
               <EventCard
                 key={event.id}
-                event={event}
+                eventId={event.id}
                 onPress={() => handleEventPress(event.id)}
               />
             ))}

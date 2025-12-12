@@ -1,5 +1,6 @@
 import React from "react";
 import { View, StyleSheet, Pressable, ImageSourcePropType } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { BorderRadius, Spacing, Shadows, Colors } from "@/src/core/constants/theme";
@@ -7,6 +8,8 @@ import { BorderRadius, Spacing, Shadows, Colors } from "@/src/core/constants/the
 interface SavedEventCardProps {
   title: string;
   dateTime: string;
+  subtitle?: string;
+  location?: string;
   image: ImageSourcePropType;
   backgroundColor?: string;
   onPress?: () => void;
@@ -16,6 +19,8 @@ interface SavedEventCardProps {
 export function SavedEventCard({
   title,
   dateTime,
+  subtitle,
+  location,
   image,
   backgroundColor = "#FFFFFF",
   onPress,
@@ -40,9 +45,24 @@ export function SavedEventCard({
       </View>
       <View style={styles.content}>
         <ThemedText style={[styles.dateTime, disabled && styles.dateTimeDisabled]}>{dateTime}</ThemedText>
-        <ThemedText style={[styles.title, disabled && styles.titleDisabled]} numberOfLines={2}>
+        <ThemedText style={[styles.title, disabled && styles.titleDisabled]} numberOfLines={3}>
           {title}
         </ThemedText>
+
+        {subtitle ? (
+          <ThemedText style={[styles.subtitle, disabled && styles.titleDisabled]} numberOfLines={1}>
+            {subtitle}
+          </ThemedText>
+        ) : null}
+
+        {location ? (
+          <View style={styles.locationRow}>
+            <Feather name="map-pin" size={12} color={Colors.light.textSecondary} style={styles.locationIcon} />
+            <ThemedText style={[styles.location, disabled && styles.titleDisabled]} numberOfLines={1}>
+              {location}
+            </ThemedText>
+          </View>
+        ) : null}
       </View>
       {disabled && <View pointerEvents="none" style={styles.disabledOverlay} />}
     </Pressable>
@@ -94,8 +114,28 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#120D26",
   },
+  subtitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#666666",
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xs,
+  },
   titleDisabled: {
     color: "rgba(18,13,38,0.45)",
+  },
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: Spacing.xs,
+  },
+  locationIcon: {
+    marginRight: 6,
+  },
+  location: {
+    fontSize: 11,
+    color: "#888888",
+    flex: 1,
   },
   disabledOverlay: {
     ...StyleSheet.absoluteFillObject,

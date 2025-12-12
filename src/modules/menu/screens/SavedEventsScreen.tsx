@@ -20,40 +20,7 @@ type SavedEvent = {
   isExpired?: boolean;
 };
 
-const SAVED_EVENTS: SavedEvent[] = [
-  {
-    id: "1",
-    title: "C.R.O en Concierto",
-    dateTime: "11 DE ABRIL - VIE - 9:00 PM",
-    image: require("@/src/modules/home/assets/cro-concierto.jpg"),
-    category: "musica",
-    isExpired: false,
-  },
-  {
-    id: "2",
-    title: "Fico's Show - Barbie sin ley, aqui viene Milei",
-    dateTime: "8 DE SEPTIEMBRE - DOM - 7:00 PM",
-    image: require("@/src/modules/home/assets/modo-cumbia.png"),
-    category: "cultura",
-    isExpired: false,
-  },
-  {
-    id: "3",
-    title: "Obra Teatral - Genialmente Malas",
-    dateTime: "9 DE FEBRERO - JUE - 6:00 PM",
-    image: require("@/src/modules/home/assets/levitar.png"),
-    category: "cultura",
-    isExpired: true,
-  },
-  {
-    id: "4",
-    title: "Cocha Emprende - Septiembre",
-    dateTime: "13 Y 14 DE ENERO - 9:00 AM",
-    image: require("@/src/modules/home/assets/fexco.jpg"),
-    category: "ferias",
-    isExpired: true,
-  },
-];
+import { useSavedEvents } from "@/src/core/context/SavedEventsContext";
 
 const normalizeLabel = (label: string) =>
   label.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -64,16 +31,20 @@ export default function SavedEventsScreen() {
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryLabel, setSelectedCategoryLabel] = useState<string | null>(null);
+  const { getAll } = useSavedEvents();
+
+  const SAVED_EVENTS = getAll();
 
   const filteredEvents = useMemo(
     () =>
       SAVED_EVENTS.filter((event) => {
-        const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory =
-          !selectedCategoryLabel || normalizeLabel(event.category) === normalizeLabel(selectedCategoryLabel);
+        const title = event.title ?? "";
+        const category = event.category ?? "";
+        const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = !selectedCategoryLabel || normalizeLabel(category) === normalizeLabel(selectedCategoryLabel);
         return matchesSearch && matchesCategory;
       }),
-    [selectedCategoryLabel, searchQuery]
+    [selectedCategoryLabel, searchQuery, SAVED_EVENTS]
   );
 
   const handleCategoryPress = (label?: string) => {
@@ -132,12 +103,14 @@ export default function SavedEventsScreen() {
         renderItem={({ item }) => (
           <View style={styles.cardContainer}>
             <SavedEventCard
-              title={item.title}
-              dateTime={item.dateTime}
+              title={item.title ?? ""}
+              subtitle={item.subtitle ?? undefined}
+              dateTime={item.dateTime ?? ""}
               image={item.image}
-              backgroundColor={item.backgroundColor}
-              onPress={() => console.log("Event pressed:", item.title)}
-              disabled={item.isExpired}
+              backgroundColor={item.backgroundColor ?? undefined}
+              location={item.location ?? undefined}
+              onPress={() => console.log("Event pressed:", item.title ?? "(no title)")}
+              disabled={!!item.isExpired}
             />
           </View>
         )}

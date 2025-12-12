@@ -15,6 +15,8 @@ export interface MapEvent {
     longitude: number;
   };
   isSaved?: boolean;
+  // Optional link to the canonical event id defined in `EVENTS_MASTER`
+  eventId?: string;
 }
 
 export const COCHABAMBA_REGION = {
@@ -73,6 +75,7 @@ export const MAP_EVENTS: MapEvent[] = [
       longitude: -66.14984506062555,
     },
     isSaved: false,
+    eventId: "cro",
   },
   {
     id: "2",
@@ -86,6 +89,8 @@ export const MAP_EVENTS: MapEvent[] = [
       latitude: -17.37555046769994,
       longitude: -66.14948750706401,
     },
+    // This map marker references the canonical `noche-musica` event when available
+    eventId: "noche-musica",
   },
   {
     id: "3",
@@ -99,6 +104,7 @@ export const MAP_EVENTS: MapEvent[] = [
       latitude: -17.37620972181715,
       longitude: -66.14992980847333,
     },
+    eventId: "oktober-fest",
   },
   {
     id: "4",
@@ -112,6 +118,7 @@ export const MAP_EVENTS: MapEvent[] = [
       latitude: -17.372599255409582,
       longitude: -66.14932669380501,
     },
+    // no canonical event currently; left unlinked
   },
   {
     id: "5",
@@ -125,5 +132,7 @@ export const MAP_EVENTS: MapEvent[] = [
       latitude: -17.375874961937384,
       longitude: -66.14949387280934,
     },
+    // link to `levitar` canonical event
+    eventId: "levitar",
   },
 ];
