@@ -14,6 +14,7 @@ import { Colors, Spacing, Typography } from "@/src/core/constants/theme";
 import { BUSINESS_TEST_CREDENTIALS } from "@/src/modules/business/test/businessData";
 import { useStatusBarStyle } from "@/src/core/context/StatusBarContext";
 import { useBusiness } from "@/src/modules/business/context/BusinessContext";
+import { TEST_DATABASE } from "@/src/core/test/testDatabase";
 
 type RegisterBusinessScreenNavigationProp = NativeStackNavigationProp<
   BusinessAuthStackParamList,
@@ -100,7 +101,8 @@ export default function RegisterBusinessScreen({ onAuthSuccess }: { onAuthSucces
   const handleRegister = () => {
     if (validateForm()) {
       console.log("[RegisterBusiness] Validation passed -> logging in business user");
-      loginBusiness();
+      // Use first test organizer id as placeholder for registration flow
+      loginBusiness(TEST_DATABASE.organizadores[0]?.id ?? 0);
       if (onAuthSuccess) {
         onAuthSuccess();
       }

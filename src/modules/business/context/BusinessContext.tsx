@@ -26,6 +26,7 @@ interface BusinessContextType {
     bio?: string;
     followers?: number;
     logo?: any;
+    isPlus?: boolean;
   } | null;
   events: BusinessEvent[];
   tickets: Ticket[];
@@ -62,6 +63,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         bio: TEST_DATABASE.organizadores[0].about,
         followers: TEST_DATABASE.organizadores[0].followers,
         logo: TEST_DATABASE.organizadores[0].logo_url,
+        isPlus: (TEST_DATABASE.organizadores[0] as any).isPlus ?? false,
       }
     : null;
 
@@ -74,6 +76,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
     bio?: string;
     followers?: number;
     logo?: any;
+    isPlus?: boolean;
   } | null>(initialOrganizer);
   const [events, setEvents] = useState<BusinessEvent[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -90,6 +93,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         bio: record.about,
         followers: record.followers,
         logo: record.logo_url,
+        isPlus: (record as any).isPlus ?? false,
       };
     },
     []
@@ -147,15 +151,25 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         } as BusinessEvent;
       });
     setEvents(scopedEvents);
-    const scopedTickets: Ticket[] = (TEST_DATABASE.tickets || [])
-      .filter((t) => t.organizador_id === organizerId)
-      .map((t) => ({
-        id: String(t.id),
-        name: t.nombre,
-        price: t.precio,
-        available: t.stock,
-        eventId: String(t.evento_id),
-      }));
+    // Build scoped tickets from events' tickets (TEST_DATABASE stores tickets inside each event)
+    const scopedTickets: Ticket[] = (TEST_DATABASE.events || [])
+      .filter((e: any) => e.organizador_id === organizerId)
+      .flatMap((e: any) => {
+        if (!Array.isArray(e.tickets)) return [] as Ticket[];
+        return (e.tickets as any[]).map((t: any) => ({
+          id: String(t.id),
+          name: t.name ?? t.nombre ?? "",
+          price: t.price ?? t.precio ?? 0,
+          fee: 0,
+          stock: Number(t.stock ?? 0),
+          soldCount: Number(t.soldCount ?? 0),
+          isFree: Boolean(t.isFree ?? false),
+          minPerPurchase: Number(t.minPerPurchase ?? 1),
+          maxPerPurchase: Number(t.maxPerPurchase ?? 1),
+          available: Boolean(t.available ?? t.stock ?? true),
+          eventId: String(e.id),
+        } as unknown as Ticket));
+      });
     setTickets(scopedTickets);
     pendingFlowRef.current = null;
   }, [ensureOrganizer]);

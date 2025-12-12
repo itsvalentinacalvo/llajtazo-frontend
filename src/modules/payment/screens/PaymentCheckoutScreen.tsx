@@ -121,6 +121,8 @@ export default function PaymentCheckoutScreen() {
       serviceFee,
       total,
       eventId,
+      // include chosen sector name so downstream screens can persist it
+      sector: selectedSector?.name ?? selectedSectorId,
     });
   };
 

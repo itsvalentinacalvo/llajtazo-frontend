@@ -66,6 +66,7 @@ export default function PaymentQrSimpleScreen() {
       total,
       eventId,
       methodId,
+      sector: (route.params as any)?.sector,
       eventTitle,
       eventVenue,
       eventDate,
