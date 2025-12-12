@@ -14,6 +14,8 @@ import { Button } from "@/src/core/components/Button";
 import { useProfile } from "@/src/core/context/ProfileContext";
 import { navigationRef } from "@/src/core/navigation/navigationRef";
 import { getEventDetailById } from "@/src/core/test/eventDetailData";
+import { TEST_DATABASE } from "@/src/core/test/testDatabase";
+import { useTickets } from "@/src/core/context/TicketsContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const TICKET_WIDTH = SCREEN_WIDTH - Spacing.xl * 2;
@@ -59,13 +61,54 @@ export default function PaymentResultScreen() {
   /** ---------------------------
    *   3. CREA LOS TICKETS
    * ---------------------------- */
+  // Prefer legacy event-specific prefix if available in TEST_DATABASE (slug or first ticket id)
+  const findLegacyPrefix = (eventIdParam?: string, titleParam?: string) => {
+    try {
+      // try direct match by slug or numeric id
+      const bySlug = TEST_DATABASE.events.find((e: any) => String((e?.slug ?? "")).toLowerCase() === String(eventIdParam ?? "").toLowerCase());
+      if (bySlug) return String((bySlug as any).slug ?? String((bySlug as any).id ?? "")).toLowerCase();
+
+      const byId = TEST_DATABASE.events.find((e: any) => String((e?.id ?? "")) === String(eventIdParam ?? ""));
+      if (byId) return String(((byId as any).slug ?? (byId as any).id ?? ""));
+
+      // fallback: match by title normalization
+      const norm = (s: string) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      const byTitle = TEST_DATABASE.events.find((e: any) => norm(String((e as any).titulo ?? "")) === norm(titleParam || ""));
+      if (byTitle) return String(((byTitle as any).slug ?? (byTitle as any).id ?? ""));
+
+      // if still not found, take first ticket id as prefix if present
+      const maybe = TEST_DATABASE.events.find((e: any) => String(((e?.slug ?? "")).toLowerCase()) === String(eventIdParam ?? "").toLowerCase() || String((e?.id ?? "")) === String(eventIdParam ?? ""));
+      if (maybe && Array.isArray((maybe as any).tickets) && (maybe as any).tickets.length > 0) {
+        const tid = String(((maybe as any).tickets?.[0]?.id ?? "")).split(/[^A-Za-z0-9]+/).join("");
+        return tid || String(((maybe as any).slug ?? (maybe as any).id ?? ""));
+      }
+    } catch (e) {
+      // ignore and fallback
+    }
+    return null;
+  };
+
+  const sectorParam = String(params.sector ?? "");
+  const legacyPrefix = findLegacyPrefix(eventId, eventTitle) || undefined;
+  const makeTitlePrefix = (title: string) => {
+    if (legacyPrefix) return String(legacyPrefix).replace(/[^A-Za-z0-9]/g, "").toLowerCase();
+    if (!title) return DEFAULT_TICKET_ID_PREFIX.replace(/[^A-Za-z0-9]/g, "");
+    // take up to first 3 words, remove non-alphanum and lowercase
+    const words = String(title).split(/\s+/).slice(0, 3).join("");
+    return words.replace(/[^A-Za-z0-9]/g, "").toLowerCase();
+  };
+
+  const titlePrefix = makeTitlePrefix(eventTitle || "ticket");
+  const sectorSlug = sectorParam ? String(sectorParam).replace(/\s+/g, "").toUpperCase() : "GENERAL";
+
   const tickets = Array.from({ length: ticketCount }).map((_, idx) => ({
     title: eventTitle,
     venue: eventVenue,
     date: eventDate,
     time: eventTime,
     image: eventImage,
-    ticketId: `${String(selectedTicketId ?? DEFAULT_TICKET_ID_PREFIX)}-${idx + 1}`,
+    sector: sectorParam,
+    ticketId: `${titlePrefix}-${sectorSlug}-${idx + 1}`,
   }));
 
   const { addPurchase } = useTickets();
@@ -74,12 +117,12 @@ export default function PaymentResultScreen() {
   React.useEffect(() => {
     try {
       const params = (route?.params as any) || {};
-      const eventId = params?.eventId || "cro";
+      const persistEventId = eventId ?? params?.eventId ?? "cro";
 
-      // Build group using any provided title/image or fall back to sample
-      const groupTitle = params?.title ?? SAMPLE_TICKET.title;
-      const groupImage = params?.image ?? SAMPLE_TICKET.image;
-      const groupVenue = params?.venue ?? SAMPLE_TICKET.venue;
+      // Build group using any provided title/image or fall back to the event data / params
+      const groupTitle = params?.title ?? eventTitle ?? "Ticket";
+      const groupImage = params?.image ?? eventImage ?? DEFAULT_IMAGE;
+      const groupVenue = params?.venue ?? eventVenue ?? "";
 
       // Sanitize tickets: ensure ticketId exists and are strings
       const sanitizedTickets = tickets
@@ -102,7 +145,7 @@ export default function PaymentResultScreen() {
       }
 
       const group = {
-        eventId,
+        eventId: persistEventId,
         title: groupTitle,
         venue: groupVenue,
         image: groupImage,
@@ -283,7 +326,7 @@ export default function PaymentResultScreen() {
 
           <Button onPress={() => {
             // navigate to checkout for the same event
-            (navigation as any).navigate?.('PaymentCheckout', { eventId: routeEventId });
+              (navigation as any).navigate?.('PaymentCheckout', { eventId });
           }} style={styles.primaryButton} textStyle={styles.primaryButtonText}>
             COMPRAR MAS ENTRADAS
           </Button>
@@ -359,4 +402,14 @@ const styles = StyleSheet.create({
   methodLabel: { fontSize: 16, color: Colors.light.textSecondary },
   methodRight: { flexDirection: "row", alignItems: "center" },
   methodName: { fontSize: 18, fontWeight: "700" },
+  actionsContainer: { marginTop: Spacing.lg },
+  primaryButton: {
+    marginTop: Spacing.md,
+    borderRadius: 12,
+    paddingVertical: Spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.light.primary,
+  },
+  primaryButtonText: { color: Colors.light.white, fontWeight: "700" },
 });

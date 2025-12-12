@@ -258,7 +258,7 @@ export default function PerfilScreen() {
     : resolveAvatarSource(selectedAccount?.avatar) ?? profile.avatar ?? defaultAvatarSource;
 
   const handleSelectAccount = (accountId: string) => {
-    if (linkedOrganizerCard && accountId === linkedOrganizerCard.id) {
+    if (linkedOrganizerCard && String(accountId) === String(linkedOrganizerCard.id)) {
       setIsBusinessAccountActive(true);
       setAccounts((prev) =>
         prev.map((account) => ({
@@ -507,7 +507,15 @@ export default function PerfilScreen() {
         onClose={() => setSwitchVisible(false)}
         accounts={accounts}
         onSelectAccount={handleSelectAccount}
-        linkedOrganizer={linkedOrganizerCard}
+        linkedOrganizer={linkedOrganizerCard ? {
+          id: String(linkedOrganizerCard.id),
+          name: linkedOrganizerCard.name,
+          about: linkedOrganizerCard.about ?? "",
+          followers: linkedOrganizerCard.followers ?? 0,
+          subscribed: linkedOrganizerCard.subscribed ?? true,
+          logo: linkedOrganizerCard.logo,
+          isSelected: linkedOrganizerCard.isSelected,
+        } : undefined}
         showOrganizeEventCta={!isBusinessLinked}
         onOrganizeEvent={handleOrganizeEvent}
       />

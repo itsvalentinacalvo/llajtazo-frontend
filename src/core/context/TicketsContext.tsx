@@ -34,30 +34,30 @@ export function TicketsProvider({ children }: { children: ReactNode }) {
     setMapState((prev) => {
       const next = new Map(prev);
       const existing = next.get(group.eventId);
+      // derive a base (everything except trailing -number) from incoming ticketId
+      const deriveBase = (ticketId?: string) => {
+        if (!ticketId) return String(group.eventId);
+        // remove trailing -<number> (one or more digits)
+        return String(ticketId).replace(/-\d+$/, "");
+      };
+
       if (existing) {
-        // append tickets to existing group but renumber ticketIds so they remain sequential
         const existingCount = existing.tickets.length;
-        // determine base prefix of incoming ticket ids (strip trailing -number if present)
-        const incomingPrefix = (group.tickets && group.tickets[0] && group.tickets[0].ticketId)
-          ? String(group.tickets[0].ticketId).split("-")[0]
-          : group.eventId;
+        const incomingBase = deriveBase(group.tickets && group.tickets[0] && group.tickets[0].ticketId);
 
         const renumbered = group.tickets.map((t, idx) => {
-          const newId = `${incomingPrefix}-${existingCount + idx + 1}`;
+          const newId = `${incomingBase}-${existingCount + idx + 1}`;
           return { ...t, ticketId: String(newId) };
         });
 
         existing.tickets = existing.tickets.concat(renumbered);
         next.set(group.eventId, { ...existing });
       } else {
-        // first-time group: ensure ticketIds are normalized to prefix-1..N
-        const incomingPrefix = (group.tickets && group.tickets[0] && group.tickets[0].ticketId)
-          ? String(group.tickets[0].ticketId).split("-")[0]
-          : group.eventId;
-
-        const renumbered = group.tickets.map((t, idx) => ({ ...t, ticketId: `${incomingPrefix}-${idx + 1}` }));
+        const incomingBase = deriveBase(group.tickets && group.tickets[0] && group.tickets[0].ticketId);
+        const renumbered = group.tickets.map((t, idx) => ({ ...t, ticketId: `${incomingBase}-${idx + 1}` }));
         next.set(group.eventId, { ...group, tickets: renumbered });
       }
+
       return next;
     });
   };
