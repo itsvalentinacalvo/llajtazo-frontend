@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
+import { useProfile } from "@/src/core/context/ProfileContext";
 
 export type PurchasedTicket = {
   ticketId: string;
@@ -30,7 +31,19 @@ const TicketsContext = createContext<TicketsContextType | undefined>(undefined);
 export function TicketsProvider({ children }: { children: ReactNode }) {
   const [mapState, setMapState] = useState<Map<string, PurchasedGroup>>(new Map());
 
+  const { profile, updateProfile } = (() => {
+    try {
+      return useProfile();
+    } catch (e) {
+      // If ProfileProvider isn't present, return fallbacks so TicketsProvider still works
+      return { profile: undefined as any, updateProfile: undefined as any } as any;
+    }
+  })();
+
   const addPurchase = (group: PurchasedGroup) => {
+    // compute how many tickets will be added so we can update profile counts
+    let addedCount = 0;
+
     setMapState((prev) => {
       const next = new Map(prev);
       const existing = next.get(group.eventId);
@@ -52,14 +65,26 @@ export function TicketsProvider({ children }: { children: ReactNode }) {
 
         existing.tickets = existing.tickets.concat(renumbered);
         next.set(group.eventId, { ...existing });
+        addedCount = renumbered.length;
       } else {
         const incomingBase = deriveBase(group.tickets && group.tickets[0] && group.tickets[0].ticketId);
         const renumbered = group.tickets.map((t, idx) => ({ ...t, ticketId: `${incomingBase}-${idx + 1}` }));
         next.set(group.eventId, { ...group, tickets: renumbered });
+        addedCount = renumbered.length;
       }
 
       return next;
     });
+
+    if (updateProfile && profile) {
+      try {
+        updateProfile({ stats: { ...profile.stats, tickets: (profile.stats?.tickets || 0) + addedCount } });
+      } catch (e) {
+        // Best-effort; ignore update failures
+        // eslint-disable-next-line no-console
+        console.debug("TicketsContext: failed updating profile stats", e);
+      }
+    }
   };
 
   const getByEventId = (eventId: string) => {
