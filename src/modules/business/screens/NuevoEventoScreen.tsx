@@ -943,7 +943,7 @@ export default function NuevoEventoScreen() {
             <Feather name="arrow-left" size={24} color={theme.text} />
           </Pressable>
         ) : (
-          <Pressable onPress={() => {}} style={styles.backButton}>
+          <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
             <Feather name="x" size={24} color={theme.text} />
           </Pressable>
         )}

@@ -15,12 +15,15 @@ import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import { Feather, Ionicons, FontAwesome, FontAwesome5 } from "@expo/vector-icons";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import { LinearGradient } from "expo-linear-gradient";
 import { ThemedText } from "@/src/core/components/ThemedText";
 import { ShareTab } from "@/src/core/components/ShareTab";
 import { useTheme } from "@/src/core/hooks/useTheme";
 import { BorderRadius, Spacing, Colors, Typography } from "@/src/core/constants/theme";
 import { useBusiness } from "@/src/modules/business/context/BusinessContext";
-import { BUSINESS_ORGANIZER, BUSINESS_EVENTS, ORGANIZER_REVIEWS } from "@/src/modules/business/test/businessData";
+import { BUSINESS_ORGANIZER, BUSINESS_EVENTS } from "@/src/modules/business/test/businessData";
+import { TEST_DATABASE } from "@/src/core/test/testDatabase";
 import { PROFILE_ACCOUNTS } from "@/src/core/test/profileData";
 import { navigationRef } from "@/src/core/navigation/navigationRef";
 
@@ -36,50 +39,81 @@ function formatFollowers(count: number): string {
 }
 
 function SocialIcon({ type, onPress }: { type: string; onPress: () => void }) {
-  const iconSize = 28;
+  // Smaller icon container to match provided reference layout
   const iconColor = "#FFFFFF";
 
   const getIconConfig = () => {
     switch (type) {
       case "facebook":
-        return { bg: "#1877F2", icon: <FontAwesome name="facebook" size={iconSize} color={iconColor} /> };
+        return {
+          gradient: ["#18ACFE", "#0163E0"],
+          icon: <FontAwesome name="facebook" size={24} color="#FFF" />,
+        };
       case "instagram":
-        return { bg: "#E4405F", icon: <FontAwesome name="instagram" size={iconSize} color={iconColor} /> };
+        return {
+          gradient: ["#FEDA75", "#FA7E1E", "#D62976", "#962FBF", "#4F5BD5"],
+          icon: <Ionicons name="logo-instagram" size={26} color="#FFF" />,
+        };
       case "tiktok":
-        return { bg: "#000000", icon: <FontAwesome5 name="tiktok" size={iconSize - 4} color={iconColor} /> };
+        return {
+          solidBg: "#000",
+          icon: <FontAwesome5 name="tiktok" size={24} color="#FFF" />,
+        };
       case "whatsapp":
-        return { bg: "#25D366", icon: <FontAwesome name="whatsapp" size={iconSize} color={iconColor} /> };
+        return {
+          gradient: ["#5BD066", "#27B43E"],
+          icon: <FontAwesome name="whatsapp" size={26} color="#FFF" />,
+        };
       case "youtube":
-        return { bg: "#FF0000", icon: <FontAwesome name="youtube-play" size={iconSize} color={iconColor} /> };
+        return {
+          solidBg: "#FF0000",
+          icon: <FontAwesome name="youtube-play" size={24} color="#FFF" />,
+        };
       case "twitter":
-        return { bg: "#000000", icon: <FontAwesome name="twitter" size={iconSize} color={iconColor} /> };
+        return {
+          solidBg: "#000",
+          icon: <FontAwesome name="twitter" size={24} color="#FFF" />,
+        };
       default:
-        return { bg: "#666666", icon: <Feather name="link" size={iconSize} color={iconColor} /> };
+        return { solidBg: "#666", icon: <Feather name="link" size={32} color="#FFF" /> };
     }
   };
 
   const config = getIconConfig();
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={[styles.socialIcon, { backgroundColor: config.bg }]}
-    >
-      {config.icon}
+    <Pressable onPress={onPress} style={styles.socialIconWrapper}>
+      {Array.isArray(config.gradient) ? (
+        <LinearGradient
+          colors={[...config.gradient] as any}
+          start={{ x: 0.2, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.socialIcon}
+        >
+          {config.icon}
+        </LinearGradient>
+      ) : (
+        <View style={[styles.socialIcon, { backgroundColor: config.solidBg || "#000" }]}>
+          {config.icon}
+        </View>
+      )}
     </Pressable>
   );
 }
 
 function StarRating({ rating }: { rating: number }) {
-  const { theme } = useTheme();
+  // Fixed, non-interactive stars styled like Notifications
+  const STAR_COLOR = "#FFCD6C";
+  const STAR_SIZE = 18;
   return (
     <View style={styles.starContainer}>
       {[1, 2, 3, 4, 5].map((star) => (
-        <Ionicons
+        <FontAwesome5
           key={star}
-          name={star <= rating ? "star" : "star-outline"}
-          size={16}
-          color={star <= rating ? "#FFD700" : theme.textSecondary}
+          name="star"
+          size={STAR_SIZE}
+          color={STAR_COLOR}
+          solid={star <= rating}
         />
       ))}
     </View>
@@ -90,28 +124,42 @@ function EventCard({ event, onPress }: { event: any; onPress: () => void }) {
   const { theme } = useTheme();
 
   return (
-    <Pressable style={[styles.eventCard, { backgroundColor: theme.backgroundDefault }]} onPress={onPress}>
-      <Image source={event.image} style={styles.eventCardImage} contentFit="cover" />
-      <View style={styles.eventCardContent}>
-        <ThemedText style={[styles.eventCardDate, { color: theme.primary }]}>
-          {event.date} - {event.time}
-        </ThemedText>
-        <ThemedText style={styles.eventCardTitle} numberOfLines={2}>
-          {event.title}
-        </ThemedText>
-        <View style={styles.eventCardLocation}>
-          <Ionicons name="location-outline" size={14} color={theme.textSecondary} />
-          <ThemedText style={[styles.eventCardLocationText, { color: theme.textSecondary }]}>
-            {event.location}
+    <View style={styles.eventCardShadow}>
+      <Pressable style={[styles.eventCard, { backgroundColor: theme.white }]} onPress={onPress}>
+        <Image source={event.image} style={styles.eventCardImage} contentFit="cover" />
+        <View style={styles.eventCardContent}>
+          <ThemedText style={[styles.eventCardDate, { color: theme.primary }]}>
+            {(event.date + " - " + event.time).toUpperCase()}
           </ThemedText>
+          <ThemedText style={styles.eventCardTitle} numberOfLines={2}>
+            {event.title}
+          </ThemedText>
+          <View style={styles.eventCardLocation}>
+            <FontAwesome6 name="location-dot" size={14} color={theme.textSecondary} />
+            <ThemedText style={[styles.eventCardLocationText, { color: theme.textSecondary }]}>
+              {event.location}
+            </ThemedText>
+          </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+    </View>
   );
 }
 
 function ReviewCard({ review }: { review: any }) {
   const { theme } = useTheme();
+  // Try to resolve event title from provided data or known events list
+  const { events } = useBusiness();
+  const organizerEvents = events.length > 0 ? events : BUSINESS_EVENTS;
+  const eventTitle = (
+    review.eventTitle
+      || (review.eventId
+        ? organizerEvents.find((e: any) => e.id === review.eventId)?.title
+        : undefined)
+      || (review.eventId
+        ? (TEST_DATABASE.events as any).find((e: any) => e.id === review.eventId)?.titulo
+        : undefined)
+  ) ?? "Evento desconocido";
 
   return (
     <View style={styles.reviewCard}>
@@ -119,6 +167,11 @@ function ReviewCard({ review }: { review: any }) {
         <Image source={review.userAvatar} style={styles.reviewAvatar} contentFit="cover" />
         <View style={styles.reviewInfo}>
           <ThemedText style={styles.reviewUserName}>{review.userName}</ThemedText>
+          <View style={styles.reviewEventRow}>
+            <ThemedText style={[styles.reviewEventName, { color: theme.textSecondary }]} numberOfLines={1}>
+              {eventTitle}
+            </ThemedText>
+          </View>
           <StarRating rating={review.rating} />
         </View>
         <ThemedText style={[styles.reviewDate, { color: theme.textSecondary }]}>
@@ -333,12 +386,20 @@ export default function PerfilBusinessScreen() {
   const { events, logoutBusiness } = useBusiness();
 
   const [activeTab, setActiveTab] = useState<ProfileTab>("INFO");
+  const tabTransition = useRef(new Animated.Value(1)).current;
+  const tabs = useRef<ProfileTab[]>(["INFO", "EVENTOS", "OPINIONES"]).current;
+  const [tabsWidth, setTabsWidth] = useState(0);
+  const indicatorX = useRef(new Animated.Value(0)).current;
   const [shareVisible, setShareVisible] = useState(false);
   const [switchVisible, setSwitchVisible] = useState(false);
 
   const organizer = BUSINESS_ORGANIZER;
   const organizerEvents = events.length > 0 ? events : BUSINESS_EVENTS;
-  const reviews = ORGANIZER_REVIEWS;
+  const organizerIdResolved =
+    TEST_DATABASE.organizadores.find((o) => o.nombre === organizer.name)?.id ?? organizer.id;
+  const reviews = TEST_DATABASE.organizer_reviews.filter(
+    (r) => String(r.organizer_id) === String(organizerIdResolved)
+  );
 
   const personalAccount = PROFILE_ACCOUNTS.length > 0
     ? {
@@ -404,32 +465,86 @@ export default function PerfilBusinessScreen() {
 
   const bioText = organizer.bio;
 
+  const animateTabIn = useCallback(() => {
+    tabTransition.setValue(0);
+    Animated.timing(tabTransition, {
+      toValue: 1,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [tabTransition]);
+
+  useEffect(() => {
+    animateTabIn();
+  }, [activeTab, animateTabIn]);
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "INFO":
         return (
-          <View style={styles.tabContent}>
+          <Animated.View
+            style={[
+              styles.tabContent,
+              {
+                opacity: tabTransition,
+                transform: [
+                  {
+                    translateX: tabTransition.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
             <View style={styles.bioSection}>
               <ThemedText style={styles.bioText}>
                 {bioText}
               </ThemedText>
             </View>
-
+            {/* Arrange social icons in two centered rows: 3 on top, 2 below */}
             <View style={styles.socialLinksContainer}>
-              {socialLinks.map((link, index) => (
-                <SocialIcon
-                  key={index}
-                  type={link.type}
-                  onPress={() => handleSocialPress(link.url)}
-                />
-              ))}
+              <View style={{ flexDirection: "row", justifyContent: "center", gap: Spacing.sm }}>
+                {socialLinks.slice(0, 3).map((link, index) => (
+                  <SocialIcon
+                    key={`top-${index}`}
+                    type={link.type}
+                    onPress={() => handleSocialPress(link.url)}
+                  />
+                ))}
+              </View>
+              <View style={{ flexDirection: "row", justifyContent: "center", gap: Spacing.sm, marginTop: Spacing.sm }}>
+                {socialLinks.slice(3).map((link, index) => (
+                  <SocialIcon
+                    key={`bottom-${index}`}
+                    type={link.type}
+                    onPress={() => handleSocialPress(link.url)}
+                  />
+                ))}
+              </View>
             </View>
-          </View>
+          </Animated.View>
         );
 
       case "EVENTOS":
         return (
-          <View style={styles.tabContent}>
+          <Animated.View
+            style={[
+              styles.tabContent,
+              {
+                opacity: tabTransition,
+                transform: [
+                  {
+                    translateX: tabTransition.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
             {organizerEvents.map((event) => (
               <EventCard
                 key={event.id}
@@ -437,22 +552,49 @@ export default function PerfilBusinessScreen() {
                 onPress={() => handleEventPress(event.id)}
               />
             ))}
-          </View>
+          </Animated.View>
         );
 
       case "OPINIONES":
         return (
-          <View style={styles.tabContent}>
+          <Animated.View
+            style={[
+              styles.tabContent,
+              {
+                opacity: tabTransition,
+                transform: [
+                  {
+                    translateX: tabTransition.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
             {reviews.map((review) => (
               <ReviewCard key={review.id} review={review} />
             ))}
-          </View>
+          </Animated.View>
         );
 
       default:
         return null;
     }
   };
+
+  const tabIndex = tabs.indexOf(activeTab);
+
+  useEffect(() => {
+    if (tabsWidth === 0) return;
+    const segmentWidth = tabsWidth / tabs.length;
+    Animated.timing(indicatorX, {
+      toValue: segmentWidth * tabIndex,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [activeTab, tabsWidth, tabs.length, indicatorX, tabIndex]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -510,8 +652,11 @@ export default function PerfilBusinessScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.tabsContainer}>
-          {(["INFO", "EVENTOS", "OPINIONES"] as ProfileTab[]).map((tab) => (
+        <View
+          style={styles.tabsContainer}
+          onLayout={(e) => setTabsWidth(e.nativeEvent.layout.width)}
+        >
+          {tabs.map((tab) => (
             <Pressable
               key={tab}
               style={[
@@ -531,6 +676,18 @@ export default function PerfilBusinessScreen() {
               </ThemedText>
             </Pressable>
           ))}
+          {tabsWidth > 0 ? (
+            <Animated.View
+              style={[
+                styles.tabIndicator,
+                {
+                  width: tabsWidth / tabs.length,
+                  transform: [{ translateX: indicatorX }],
+                  borderBottomColor: theme.primary,
+                },
+              ]}
+            />
+          ) : null}
         </View>
 
         {renderTabContent()}
@@ -633,7 +790,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.xs,
     borderWidth: 1,
   },
   editButtonText: {
@@ -643,6 +800,7 @@ const styles = StyleSheet.create({
   tabsContainer: {
     flexDirection: "row",
     marginBottom: Spacing.lg,
+    position: "relative",
   },
   tab: {
     flex: 1,
@@ -654,6 +812,12 @@ const styles = StyleSheet.create({
   activeTab: {
     borderBottomWidth: 2,
   },
+  tabIndicator: {
+    position: "absolute",
+    left: 0,
+    bottom: 0,
+    borderBottomWidth: 2,
+  },
   tabText: {
     fontSize: 14,
     fontWeight: "600",
@@ -662,30 +826,44 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bioSection: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing["3xl"],
   },
   bioText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 19,
+    lineHeight: 24,
+    textAlign: "center",
   },
   socialLinksContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    gap: Spacing.sm,
+  },
+  socialIconWrapper: {
+    width: 40,
+    height: 40,
     justifyContent: "center",
-    gap: Spacing.md,
+    alignItems: "center",
   },
   socialIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
+  },
+  eventCardShadow: {
+    borderRadius: BorderRadius.md,
+    // iOS shadow
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    // Android elevation
+    elevation: 4,
+    marginBottom: Spacing.md,
   },
   eventCard: {
     flexDirection: "row",
     borderRadius: BorderRadius.md,
     overflow: "hidden",
-    marginBottom: Spacing.md,
   },
   eventCardImage: {
     width: 90,
@@ -693,17 +871,19 @@ const styles = StyleSheet.create({
   },
   eventCardContent: {
     flex: 1,
-    padding: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
     justifyContent: "center",
   },
   eventCardDate: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
+    letterSpacing: 0.3,
     marginBottom: Spacing.xs,
   },
   eventCardTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
     marginBottom: Spacing.xs,
   },
   eventCardLocation: {
@@ -735,6 +915,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 2,
+  },
+  reviewEventRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    marginBottom: 2,
+  },
+  reviewEventName: {
+    fontSize: 13,
+    flexShrink: 1,
   },
   starContainer: {
     flexDirection: "row",

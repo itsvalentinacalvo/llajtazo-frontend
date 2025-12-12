@@ -14,7 +14,7 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
   withSequence,
 } from "react-native-reanimated";
 import type { SharedValue } from "react-native-reanimated";
@@ -75,9 +75,15 @@ function StarRating({ rating, onRatingChange }: StarRatingProps) {
     const newRating = index + 1;
     setCurrentRating(newRating);
 
+    // Reset any ongoing animations to avoid bounce loops
+    for (const s of scales) {
+      s.value = 1;
+    }
+
+    // Quick, non-bouncy pop animation on the pressed star
     scales[index].value = withSequence(
-      withSpring(1.4, { damping: 4, stiffness: 300 }),
-      withSpring(1, { damping: 8, stiffness: 200 })
+      withTiming(1.15, { duration: 120 }),
+      withTiming(1, { duration: 120 })
     );
 
     onRatingChange?.(newRating);

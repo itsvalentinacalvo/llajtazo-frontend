@@ -94,6 +94,13 @@ const createNotificationItem = (notification: RawNotification): NotificationItem
   const associatedEvent = eventId
     ? TEST_DATABASE.events.find((event) => event.id === eventId)
     : undefined;
+  const ratingValue =
+    typeof (notification as any).data?.rating === "number"
+      ? (notification as any).data.rating
+      : undefined;
+
+  // Do not inject event names into messages; disable highlights
+  const shouldHighlight = (_type: NotificationType): boolean => false;
 
   return {
     id: notification.id.toString(),
@@ -102,8 +109,8 @@ const createNotificationItem = (notification: RawNotification): NotificationItem
     title: notification.titulo,
     message: notification.cuerpo,
     timeAgo: formatRelativeTime(notification.creado_en),
-    highlightedText:
-      normalizedType === "event_reminder" ? associatedEvent?.titulo : undefined,
+    highlightedText: shouldHighlight(normalizedType) ? associatedEvent?.titulo : undefined,
+    rating: ratingValue,
     eventId: eventId ? eventId.toString() : undefined,
     eventName: associatedEvent?.titulo,
   };
