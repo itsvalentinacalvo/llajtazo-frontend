@@ -1,6 +1,6 @@
 import { ImageSourcePropType } from "react-native";
 
-export type EventCategory = "cultura" | "musica" | "ferias" | "arte";
+export type EventCategory = "cultura" | "musica" | "ferias" | "arte" | "danza";
 
 export interface MapEvent {
   id: string;
@@ -59,10 +59,29 @@ export const CATEGORY_CONFIG: Record<
     iconLibrary: "fontawesome",
     label: "Arte",
   },
+  danza: {
+    color: "#00BFFF",
+    icon: "shoe-ballet",
+    iconLibrary: "material",
+    label: "Danza",
+  },
 };
+
 
 import { EVENTS_MASTER } from "@/src/core/test/events";
 import { TEST_DATABASE } from "@/src/core/test/testDatabase";
+
+// Helper to map categoria_id to EventCategory string
+function getCategoryFromId(id?: number): EventCategory {
+  switch (id) {
+    case 1: return "cultura";
+    case 2: return "musica";
+    case 3: return "ferias";
+    case 4: return "arte";
+    case 5: return "danza";
+    default: return "musica";
+  }
+}
 
 function normalize(s?: string) {
   return (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
@@ -86,8 +105,8 @@ function formatTimeString(startIso?: string): string {
 
 // Build MAP_EVENTS from TEST_DATABASE canonical events, enriching with coordinates
 export const MAP_EVENTS: MapEvent[] = EVENTS_MASTER.map((ev) => {
-  // Find the raw DB event by normalized title
-  const raw = (TEST_DATABASE.events || []).find((e) => normalize(e.titulo) === normalize(ev.title));
+  // Find the raw DB event by id or slug for robust matching
+  const raw = (TEST_DATABASE.events || []).find((e) => e.id === Number(ev.id) || e.slug === ev.id);
   const lugar = raw ? (TEST_DATABASE.lugares || []).find((l) => l.id === raw.lugar_id) : undefined;
   const latitude = (lugar as any)?.latitud ?? 0;
   const longitude = (lugar as any)?.longitud ?? 0;
@@ -98,7 +117,7 @@ export const MAP_EVENTS: MapEvent[] = EVENTS_MASTER.map((ev) => {
   // Fallback to an existing local asset if the DB image is missing
   const image = ev.image ?? require("../assets/levitar.png");
 
-  const category: EventCategory = "musica"; // default; could be refined from DB if available
+  const category: EventCategory = getCategoryFromId(raw?.categoria_id);
 
   return {
     id: ev.id,
