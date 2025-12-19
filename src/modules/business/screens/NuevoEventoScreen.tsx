@@ -545,7 +545,10 @@ export default function NuevoEventoScreen() {
   const renderStep1 = () => (
     <>
       <View
-        style={[styles.imageUploader, { backgroundColor: theme.backgroundSecondary }]}
+        style={[
+          styles.imageUploader,
+          { backgroundColor: theme.backgroundSecondary, height: EVENT_IMAGE_FRAME_HEIGHT * 1.9 } // Agrandar imagen
+        ]}
         onLayout={(event) => setImageFrameWidth(event.nativeEvent.layout.width)}
       >
         {formData.eventImage ? (
@@ -621,7 +624,11 @@ export default function NuevoEventoScreen() {
         }
         placeholder="Escribe los detalles del evento..."
         theme={theme}
-        editorStyle={styles.eventDetailsEditor as ViewStyle}
+        editorStyle={{
+          ...styles.eventDetailsEditor,
+          minHeight: 800, // Mucho más alto
+          height: 1000,
+        } as ViewStyle}
       />
 
 
@@ -719,11 +726,12 @@ export default function NuevoEventoScreen() {
 
       <ThemedText style={styles.label}>Enlace a Google Maps</ThemedText>
       <MiniMapPicker
-        latitude={formData.latitude}
-        longitude={formData.longitude}
+        latitude={formData.latitude ?? -17.3936} // Latitud de Cochabamba por defecto
+        longitude={formData.longitude ?? -66.1570} // Longitud de Cochabamba por defecto
         onChange={(lat, lng) => {
           setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng, googleMapsLink: `https://www.google.com/maps?q=${lat},${lng}` }));
         }}
+        style={{ height: 220, borderRadius: 12, marginBottom: 12 }} // Agrandar mapa
       />
       <ThemedText style={styles.label}>Mapa General</ThemedText>
       <Pressable
@@ -1076,7 +1084,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xl,
   },
   imageUploader: {
-    height: EVENT_IMAGE_FRAME_HEIGHT,
+    height: EVENT_IMAGE_FRAME_HEIGHT, // Se sobreescribe en el render para agrandar
     borderRadius: BorderRadius.sm,
     marginBottom: Spacing.lg,
     overflow: "hidden",
@@ -1092,6 +1100,7 @@ const styles = StyleSheet.create({
   eventDetailsEditor: {
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.sm,
+    minHeight: 80, // Agrandar campo de texto por defecto
   },
   imagePlaceholder: {
     flex: 1,
