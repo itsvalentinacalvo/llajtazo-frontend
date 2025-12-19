@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { View, StyleSheet, Pressable, Text, Dimensions } from "react-native";
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS, Easing } from "react-native-reanimated";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS, Easing, interpolate } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ScreenScrollView } from "@/src/core/components/ScreenScrollView";
@@ -47,11 +47,16 @@ const initialSelected: string[] = [];
 
 export default function InterestsScreen({ navigation, onAuthSuccess }: any) {
   const insets = useSafeAreaInsets();
-  const windowHeight = Dimensions.get("window").height;
-  const translateY = useSharedValue(0);
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
+  // Use same exit animation as SplashScreen: fade out + slight scale
+  const exitProgress = useSharedValue(0);
+  const animatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(exitProgress.value, [0, 1], [1, 0]);
+    const scale = interpolate(exitProgress.value, [0, 1], [1, 1.05]);
+    return {
+      opacity,
+      transform: [{ scale }],
+    };
+  });
 
   const [selectedInterests, setSelectedInterests] =
     useState<string[]>(initialSelected);
@@ -98,9 +103,9 @@ export default function InterestsScreen({ navigation, onAuthSuccess }: any) {
       }
     };
 
-    // perform swipe-down animation then finalize
-    console.debug("[Interests] starting swipe-down animation");
-    translateY.value = withTiming(windowHeight, { duration: 450, easing: Easing.out(Easing.cubic) }, (finished) => {
+    // perform splash-style exit animation then finalize
+    console.debug("[Interests] starting exit animation (splash style)");
+    exitProgress.value = withTiming(1, { duration: 400, easing: Easing.bezier(0.4, 0, 0.2, 1) }, (finished) => {
       if (finished) runOnJS(finalize)();
     });
   };

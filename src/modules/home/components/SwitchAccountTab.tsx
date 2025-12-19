@@ -60,6 +60,7 @@ export const SwitchAccountTab: React.FC<SwitchAccountTabProps> = ({
 }) => {
   const { theme } = useTheme();
   const slideAnim = useRef(new Animated.Value(height)).current;
+  const [internalVisible, setInternalVisible] = useState<boolean>(visible);
   const derivedSelectedKey = (() => {
     const selectedAccount = accounts.find((account) => account.isSelected);
     if (selectedAccount) {
@@ -82,8 +83,11 @@ export const SwitchAccountTab: React.FC<SwitchAccountTabProps> = ({
     }
   }, [derivedSelectedKey]);
 
+  // Keep the Modal mounted while playing entrance/exit animations so it
+  // doesn't get cut off when parent toggles `visible` immediately.
   useEffect(() => {
     if (visible) {
+      setInternalVisible(true);
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 300,
@@ -94,24 +98,58 @@ export const SwitchAccountTab: React.FC<SwitchAccountTabProps> = ({
         toValue: height,
         duration: 300,
         useNativeDriver: false,
-      }).start();
+      }).start(() => {
+        setInternalVisible(false);
+      });
     }
   }, [visible, slideAnim]);
 
+  // Allow a short delay so the selection highlight/check is visible
+  const pendingSelectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (pendingSelectRef.current) {
+        clearTimeout(pendingSelectRef.current as any);
+        pendingSelectRef.current = null;
+      }
+    };
+  }, []);
+
+  const closeWithAnimation = (callback?: () => void) => {
+    Animated.timing(slideAnim, {
+      toValue: height,
+      duration: 300,
+      useNativeDriver: false,
+    }).start(() => {
+      setInternalVisible(false);
+      callback?.();
+      // notify parent that the sheet is closed
+      onClose();
+    });
+  };
+
   const handleSelectAccount = (accountId: string, source: "account" | "organizer") => {
+    if (pendingSelectRef.current) return;
+
     setSelectedAccountKey(`${source}-${accountId}`);
-    onSelectAccount(accountId);
-    onClose();
+
+    // wait a bit to let the selection visual update before closing the sheet
+    pendingSelectRef.current = setTimeout(() => {
+      pendingSelectRef.current = null;
+      // perform selection and close with animation
+      const cb = () => onSelectAccount(accountId);
+      closeWithAnimation(cb);
+    }, 220);
   };
 
   return (
     <Modal
-      visible={visible}
+      visible={internalVisible}
       transparent
       animationType="none"
-      onRequestClose={onClose}
+      onRequestClose={() => closeWithAnimation()}
     >
-      <Pressable style={styles.overlay} onPress={onClose} accessible={false} />
+      <Pressable style={styles.overlay} onPress={() => closeWithAnimation()} accessible={false} />
 
       <Animated.View
         style={[
