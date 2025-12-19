@@ -79,7 +79,7 @@ export function SponsoredBanner({
     <View style={styles.container}>
       {events.map((event, index) => (
         <ExpoImage
-          key={event.id}
+          key={`${event.id}-${index}`}
           source={event.image}
           style={styles.preloadImage}
           cachePolicy="memory-disk"

@@ -154,9 +154,9 @@ export default function EventosScreen() {
       case "normalRow":
         return (
           <View style={styles.gridRow}>
-            {item.events.map((eventId) => (
+            {item.events.map((eventId, idx) => (
               <EventCardSmall
-                key={eventId}
+                key={`${eventId}-${idx}`}
                 eventId={eventId}
                 cardWidth={cardWidth}
                 isSaved={isSaved(eventId)}
