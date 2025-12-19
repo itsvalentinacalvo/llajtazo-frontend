@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import LoginBusinessScreen from "@/src/modules/business/screens/LoginBusinessScreen";
+import LoginScreen from "@/src/modules/auth/screens/LoginScreen";
 import RegisterBusinessScreen from "@/src/modules/business/screens/RegisterBusinessScreen";
 import ResetPasswordBusinessScreen from "@/src/modules/business/screens/ResetPasswordBusinessScreen";
 import VerificationBusinessScreen from "@/src/modules/business/screens/VerificationBusinessScreen";
@@ -31,7 +31,7 @@ export default function BusinessAuthNavigator({
         name="LoginBusiness"
         options={{ gestureEnabled: false }}
       >
-        {(props) => <LoginBusinessScreen {...props} onAuthSuccess={onAuthSuccess} />}
+        {(props) => <LoginScreen {...props} onAuthSuccess={onAuthSuccess} />}
       </Stack.Screen>
       <Stack.Screen
         name="RegisterBusiness"

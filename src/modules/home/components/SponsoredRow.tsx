@@ -31,7 +31,7 @@ export function SponsoredRow({ events, onEventPress }: SponsoredRowProps) {
         {events.map((eventId, index) =>
           eventId ? (
             <SponsoredEventCard
-              key={eventId}
+              key={`${eventId}-${index}`}
               eventId={eventId}
               cardWidth={cardWidth}
               onPress={() => onEventPress?.(eventId)}

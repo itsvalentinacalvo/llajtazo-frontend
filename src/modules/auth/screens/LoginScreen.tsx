@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { View, Text, StyleSheet, Pressable, Switch, Dimensions } from "react-native";
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS, Easing } from "react-native-reanimated";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS, Easing, interpolate } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, CommonActions } from "@react-navigation/native";
@@ -13,6 +13,8 @@ import Divider from "@/src/modules/auth/components/Divider";
 import { ScreenKeyboardAwareScrollView } from "@/src/core/components/ScreenKeyboardAwareScrollView";
 import { Colors, Spacing, Typography } from "@/src/core/constants/theme";
 import { TEST_CREDENTIALS } from "@/src/core/test/profileData";
+import { TEST_DATABASE } from "@/src/core/test/testDatabase";
+import { useBusiness } from "@/src/modules/business/context/BusinessContext";
 import { useStatusBarStyle } from "@/src/core/context/StatusBarContext";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
@@ -29,17 +31,23 @@ interface FormErrors {
 export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => void }) {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const insets = useSafeAreaInsets();
-  const windowHeight = Dimensions.get("window").height;
-  const translateY = useSharedValue(0);
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
+  // use exitProgress animation to match SplashScreen exit (fade + slight scale)
+  const exitProgress = useSharedValue(0);
+  const animatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(exitProgress.value, [0, 1], [1, 0]);
+    const scale = interpolate(exitProgress.value, [0, 1], [1, 1.05]);
+    return {
+      opacity,
+      transform: [{ scale }],
+    };
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [shakeFields, setShakeFields] = useState<{ [key: string]: boolean }>({});
   useStatusBarStyle("light", "#2BBBFF");
+  const { loginBusiness, switchToBusiness } = useBusiness();
 
   const triggerShake = useCallback((fields: string[]) => {
     const shakeState: { [key: string]: boolean } = {};
@@ -65,10 +73,16 @@ export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => v
     }
 
     if (!newErrors.email && !newErrors.password) {
-      const emailMatches = email.toLowerCase() === TEST_CREDENTIALS.email.toLowerCase();
-      const passwordMatches = password === TEST_CREDENTIALS.password;
+      // Accept either primary user credentials or any organizer credentials
+      const emailLower = email.toLowerCase();
+      const isUser =
+        emailLower === (TEST_CREDENTIALS.email || "").toLowerCase() && password === (TEST_CREDENTIALS.password || "");
 
-      if (!emailMatches || !passwordMatches) {
+      const organizer = (TEST_DATABASE.organizadores || []).find(
+        (o) => o.email?.toLowerCase() === emailLower && o.password === password
+      );
+
+      if (!isUser && !organizer) {
         newErrors.general = "Correo o contraseña incorrectos";
         fieldsToShake.push("email", "password");
       }
@@ -90,12 +104,30 @@ export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => v
     if (validateForm()) {
       console.log("[Login] Validation passed");
       // animate swipe down programmatically then navigate
-      const finalize = () => {
-        if (onAuthSuccess) {
-          console.log("[Login] animation complete -> calling onAuthSuccess");
-          onAuthSuccess();
+      // Determine whether this is an organizer login
+      const emailLower = email.toLowerCase();
+      const organizer = (TEST_DATABASE.organizadores || []).find(
+        (o) => o.email?.toLowerCase() === emailLower && o.password === password
+      );
 
-          // Also attempt to reset the parent navigator to Home to ensure flow switches
+      const finalize = () => {
+        if (organizer) {
+          // Log in as business and navigate to Business section
+          try {
+            loginBusiness(organizer.id);
+            switchToBusiness();
+          } catch (e) {
+            console.warn("[Login] failed to switch to business:", e);
+          }
+          if (onAuthSuccess) {
+            onAuthSuccess();
+          }
+          return;
+        }
+
+        // default: user login -> navigate to MainApp ExplorarTab
+        if (onAuthSuccess) {
+          onAuthSuccess();
           try {
             const parent = (navigation as any).getParent && (navigation as any).getParent();
             parent && parent.reset && parent.reset({ index: 0, routes: [{ name: "Home" }] });
@@ -103,7 +135,6 @@ export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => v
             console.warn("[Login] failed to reset parent to Home:", e);
           }
         } else {
-          console.log("[Login] animation complete -> dispatching reset to MainApp->ExplorarTab");
           navigation.dispatch(
             CommonActions.reset({
               index: 0,
@@ -113,8 +144,8 @@ export default function LoginScreen({ onAuthSuccess }: { onAuthSuccess?: () => v
         }
       };
 
-      console.debug("[Login] starting swipe-down animation");
-      translateY.value = withTiming(windowHeight, { duration: 450, easing: Easing.out(Easing.cubic) }, (finished) => {
+      console.debug("[Login] starting exit animation (splash style)");
+      exitProgress.value = withTiming(1, { duration: 400, easing: Easing.bezier(0.4, 0, 0.2, 1) }, (finished) => {
         if (finished) runOnJS(finalize)();
       });
     } else {
