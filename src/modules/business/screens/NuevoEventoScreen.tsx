@@ -725,14 +725,15 @@ export default function NuevoEventoScreen() {
       />
 
       <ThemedText style={styles.label}>Enlace a Google Maps</ThemedText>
-      <MiniMapPicker
-        latitude={formData.latitude ?? -17.3936} // Latitud de Cochabamba por defecto
-        longitude={formData.longitude ?? -66.1570} // Longitud de Cochabamba por defecto
-        onChange={(lat, lng) => {
-          setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng, googleMapsLink: `https://www.google.com/maps?q=${lat},${lng}` }));
-        }}
-        style={{ height: 220, borderRadius: 12, marginBottom: 12 }} // Agrandar mapa
-      />
+      <View style={{ height: 220, borderRadius: 12, marginBottom: 12, overflow: 'hidden' }}>
+        <MiniMapPicker
+          latitude={formData.latitude ?? -17.3936}
+          longitude={formData.longitude ?? -66.1570}
+          onChange={(lat, lng) => {
+            setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng, googleMapsLink: `https://www.google.com/maps?q=${lat},${lng}` }));
+          }}
+        />
+      </View>
       <ThemedText style={styles.label}>Mapa General</ThemedText>
       <Pressable
         style={[styles.uploadButton, { borderColor: Colors.light.primary }]}
