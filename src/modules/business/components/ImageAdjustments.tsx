@@ -45,9 +45,11 @@ export function ImageAdjustments({
   const startOffsetRef = useRef(0);
   const offsetRef = useRef(0);
 
+  // Usar el mismo tamaño de frame que en NuevoEventoScreen (agrandado)
   const effectiveFrameWidth = useMemo(() => {
     const horizontalPadding = 2 * (Spacing.xl + Spacing.lg);
     const availableWidth = Math.max(windowWidth - horizontalPadding, 0);
+    // Si el frameWidth es suficientemente grande, usarlo, si no, usar el availableWidth
     return Math.min(frameWidth, availableWidth);
   }, [frameWidth, windowWidth]);
 
@@ -94,7 +96,9 @@ export function ImageAdjustments({
     return null;
   }
 
-  const { scaledHeight } = getImageMetrics(image, effectiveFrameWidth, frameHeight);
+  // Usar frameHeight agrandado igual que en NuevoEventoScreen
+  const enlargedFrameHeight = frameHeight * 1.9;
+  const { scaledHeight } = getImageMetrics(image, effectiveFrameWidth, enlargedFrameHeight);
 
   const handleSave = () => {
     const nextOffset = clamp(offsetRef.current, minOffsetRef.current, 0);
@@ -120,7 +124,7 @@ export function ImageAdjustments({
           <ThemedText style={styles.title}>Ajusta la imagen</ThemedText>
 
           <View
-            style={[styles.frame, { width: effectiveFrameWidth, height: frameHeight }]}
+            style={[styles.frame, { width: effectiveFrameWidth, height: enlargedFrameHeight }]}
             {...panResponder.panHandlers}
           >
             <Image

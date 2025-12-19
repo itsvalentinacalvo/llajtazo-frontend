@@ -41,7 +41,7 @@ export function SponsoredRow({ events, onEventPress }: SponsoredRowProps) {
           )
         )}
       </View>
-
+      
       <View style={styles.innerSpacer} />
       <View style={[styles.divider, { backgroundColor: theme.border }]} />
       <View style={styles.bottomSpacer} />

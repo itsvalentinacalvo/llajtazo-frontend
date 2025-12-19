@@ -152,20 +152,20 @@ export default function EventosScreen() {
           />
         );
       case "normalRow":
-        return (
-          <View style={styles.gridRow}>
-            {item.events.map((eventId, idx) => (
-              <EventCardSmall
-                key={`${eventId}-${idx}`}
-                eventId={eventId}
-                cardWidth={cardWidth}
-                isSaved={isSaved(eventId)}
-                onPress={() => openEventDetail(eventId)}
-                onBookmarkPress={() => handleBookmarkToggle(eventId)}
-              />
-            ))}
-          </View>
-        );
+          return (
+            <View style={styles.gridRow}>
+              {item.events.map((eventId, idx) => (
+                <EventCardSmall
+                  key={`${eventId}-${idx}`}
+                  eventId={eventId}
+                  cardWidth={cardWidth}
+                  isSaved={isSaved(eventId)}
+                  onPress={() => openEventDetail(eventId)}
+                  onBookmarkPress={() => handleBookmarkToggle(eventId)}
+                />
+              ))}
+            </View>
+          );
       case "sponsoredRow":
         return (
           <SponsoredRow
